@@ -53,7 +53,27 @@ runner-smoke:
 	$(CC) build/rs_*.o -framework Foundation -framework AppKit -o build/runner_smoke
 	build/runner_smoke
 
+# The terminal's transcript and the ending store (host only).
+ending-smoke:
+	mkdir -p build
+	for f in tests/ending_smoke.m app/TerminalView.m app/EndingStore.m app/UIHelpers.m; do \
+	  $(CC) -c -x objective-c -fno-objc-arc -w -g -Iterm -Icore -Iapp $$f -o build/es_$$(basename $$f .m).o || exit 1; \
+	done
+	for f in term/*.c core/games.c; do $(CC) -c -w -g -Iterm -Icore $$f -o build/es_c_$$(basename $$f .c).o || exit 1; done
+	$(CC) build/es_*.o -framework Foundation -framework AppKit -o build/ending_smoke
+	build/ending_smoke
+
+# A GameSession end to end on a real pty with a fake game (host only).
+session-smoke:
+	mkdir -p build
+	for f in tests/session_smoke.m app/GameSession.m app/GameConfig.m app/GameEnv.m app/EndingStore.m app/TerminalView.m app/UIHelpers.m; do \
+	  $(CC) -c -x objective-c -fno-objc-arc -w -g -Iterm -Icore -Iapp $$f -o build/ss_$$(basename $$f .m).o || exit 1; \
+	done
+	for f in term/*.c core/*.c; do $(CC) -c -w -g -Iterm -Icore $$f -o build/ss_c_$$(basename $$f .c).o || exit 1; done
+	$(CC) build/ss_*.o -framework Foundation -framework AppKit -o build/session_smoke
+	build/session_smoke
+
 clean:
 	rm -rf build
 
-.PHONY: all test lint check-objc runner-smoke clean
+.PHONY: all test lint check-objc runner-smoke ending-smoke session-smoke clean

@@ -78,4 +78,5 @@
 - (void)selectAll:(id)sender;
 - (void)clearScrollback:(id)sender;
 - (NSString *)selectedText;
+- (NSString *)transcript:(int)maxLines;       /* the scrollback and the screen as plain text (box drawing as + - |), blank edges trimmed */
 @end

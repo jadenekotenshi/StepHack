@@ -3,7 +3,9 @@
 #import "UIHelpers.h"
 #import "GameEnv.h"
 #import "Reaper.h"
+#import "EndingStore.h"
 #include "keymap.h"
+#include "commands.h"
 #include <string.h>
 #include <stdlib.h>              /* posix_openpt/grantpt/unlockpt/ptsname on the host build */
 #include <errno.h>
@@ -52,6 +54,7 @@
 #define EWOULDBLOCK EAGAIN
 #endif
 
+#define COMMAND_BAR_H 30.0
 #define TICK_SECONDS 0.02
 #define MAX_READS_PER_TICK 8             /* x 16 KB, within TICK_BUDGET seconds */
 #define TICK_BUDGET 0.03
@@ -63,6 +66,9 @@
 - (void)tick:(NSTimer *)t;
 - (void)childEnded;
 - (void)flushPending;
+- (void)buildCommandBarIn:(NSView *)container width:(float)width;
+- (void)saveEnding;
+- (void)terminalView:(id)tv sendBytes:(const unsigned char *)bytes length:(int)n;
 @end
 
 #ifdef OPENSTEP
@@ -192,6 +198,7 @@ int hk_reap_child(int pid, int *status_out)
     [self shutdown];
     if (pending.p) free(pending.p);
     [window release]; [termView release]; [scroller release];
+    [barControls release]; [moreCommands release]; [endingPath release];
     [super dealloc];
 }
 
@@ -199,6 +206,7 @@ int hk_reap_child(int pid, int *status_out)
 - (BOOL)isRunning { return state == GS_RUNNING; }
 - (int)exitStatus { return exitStatus; }
 - (const HkGameDef *)game { return game; }
+- (NSString *)endingPath { return endingPath; }
 - (int)padMode { return padMode; }
 - (void)setPadMode:(int)mode { padMode = mode; }
 
@@ -216,7 +224,7 @@ int hk_reap_child(int pid, int *status_out)
 
     termView = [[TerminalView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100)];
     cs = [termView contentSizeForCols:80 rows:24];
-    content = NSMakeRect(0, 0, cs.width + sw, cs.height);
+    content = NSMakeRect(0, 0, cs.width + sw, cs.height + COMMAND_BAR_H);
 
     window = [[NSWindow alloc] initWithContentRect:content
                                          styleMask:(NSTitledWindowMask | NSClosableWindowMask |
@@ -236,12 +244,13 @@ int hk_reap_child(int pid, int *status_out)
      * rather than an NSScrollView, so it does not inherit that platform default automatically --
      * placed on the left explicitly here to match it. */
     container = [[NSView alloc] initWithFrame:content];
-    [termView setFrame:NSMakeRect(sw, 0, cs.width, cs.height)];
+    [termView setFrame:NSMakeRect(sw, COMMAND_BAR_H, cs.width, cs.height)];
     [termView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
-    scroller = [[NSScroller alloc] initWithFrame:NSMakeRect(0, 0, sw, cs.height)];
+    scroller = [[NSScroller alloc] initWithFrame:NSMakeRect(0, COMMAND_BAR_H, sw, cs.height)];
     [scroller setAutoresizingMask:(NSViewHeightSizable | NSViewMaxXMargin)];
     [container addSubview:termView];
     [container addSubview:scroller];
+    [self buildCommandBarIn:container width:cs.width + sw];
     [window setContentView:container];
     [container release];
 
@@ -263,6 +272,72 @@ int hk_reap_child(int pid, int *status_out)
         t->title_changed = 0;
         [window setTitle:[NSString stringWithCString:t->title]];
     }
+}
+
+/* ---------------------------------------------------------------- */
+/* the command bar                                                   */
+
+- (void)buildCommandBarIn:(NSView *)container width:(float)width
+{
+    NSView *bar = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, width, COMMAND_BAR_H)] autorelease];
+    float x = 4.0;
+    int i;
+    NSPopUpButton *more;
+
+    [bar setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
+    barControls = [[NSMutableArray alloc] init];
+    moreCommands = [[NSMutableArray alloc] init];
+
+    for (i = 0; i < hk_command_count(); i++) {
+        const HkCommand *c = hk_command(i);
+        NSButton *b;
+        float w;
+        if (!hk_command_in(c, game) || !c->main) continue;
+        w = 14.0 + 6.5 * (float)strlen(c->label);
+        b = ui_button([NSString stringWithCString:c->label], NSMakeRect(x, 4, w, 22), self, @selector(commandButton:));
+        [b setFont:[NSFont systemFontOfSize:10.0]];
+        [b setTag:i];
+        [bar addSubview:b];
+        [barControls addObject:b];
+        x += w + 3.0;
+    }
+    more = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(x + 4, 4, 70, 22) pullsDown:YES] autorelease];
+    [more addItemWithTitle:@"More"];
+    for (i = 0; i < hk_command_count(); i++) {
+        const HkCommand *c = hk_command(i);
+        if (!hk_command_in(c, game) || c->main) continue;
+        [more addItemWithTitle:[NSString stringWithCString:c->label]];
+        [moreCommands addObject:[NSNumber numberWithInt:i]];
+    }
+    [more setFont:[NSFont systemFontOfSize:10.0]];
+    [more setTarget:self];
+    [more setAction:@selector(commandMenu:)];
+    [bar addSubview:more];
+    [barControls addObject:more];
+    [container addSubview:bar];
+}
+
+- (void)sendKeys:(const char *)keys
+{
+    if (state != GS_RUNNING || !keys) return;
+    [self terminalView:termView sendBytes:(const unsigned char *)keys length:(int)strlen(keys)];
+}
+
+- (void)commandButton:(id)sender
+{
+    const HkCommand *c = hk_command([sender tag]);
+    if (c) [self sendKeys:c->keys];
+    [window makeFirstResponder:termView];                     /* typing carries on in the game */
+}
+
+- (void)commandMenu:(id)sender
+{
+    int i = [sender indexOfSelectedItem] - 1;                /* item 0 is the menu's own title */
+    if (i >= 0 && i < (int)[moreCommands count]) {
+        const HkCommand *c = hk_command([[moreCommands objectAtIndex:i] intValue]);
+        if (c) [self sendKeys:c->keys];
+    }
+    [window makeFirstResponder:termView];
 }
 
 /* ---------------------------------------------------------------- */
@@ -460,10 +535,24 @@ int hk_reap_child(int pid, int *status_out)
                    : WIFSIGNALED(status) ? 128 + WTERMSIG(status) : -1;
     }
     if (masterFD >= 0) { close(masterFD); masterFD = -1; }
+    [self saveEnding];
     /* The window stays open (showing final scrollback) until the user closes it themselves --
      * windowWillClose: is the only place that notifies owner, so it happens exactly once whether
      * the shell exited first or the user just closed a still-running one. */
     [window setTitle:[NSString stringWithFormat:@"%s (finished, status %d)", game->title, exitStatus]];
+}
+
+/* What the game left on the screen -- the tombstone, the final attributes, the high scores -- is kept as text, and the
+ * command bar, which would only type into nothing, is switched off. */
+- (void)saveEnding
+{
+    unsigned i;
+    NSString *t = [termView transcript:600];
+
+    for (i = 0; i < [barControls count]; i++) [[barControls objectAtIndex:i] setEnabled:NO];
+    if ([ui_trim(t) length] == 0) return;
+    [endingPath release];
+    endingPath = [[EndingStore saveText:t forGame:game] retain];
 }
 
 - (void)shutdown

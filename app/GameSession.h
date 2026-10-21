@@ -28,6 +28,9 @@ enum { GS_RUNNING = 1, GS_ENDED };
     NSWindow      *window;
     TerminalView  *termView;
     NSScroller    *scroller;
+    NSMutableArray *barControls;       /* the command bar's buttons and menu, disabled when the game is over */
+    NSMutableArray *moreCommands;      /* command indices behind the More menu's items */
+    NSString      *endingPath;         /* where this game's ending was saved, once it is over */
 }
 - (id)initWithGame:(const HkGameDef *)aGame owner:(id)anOwner;
 /* Opens a pty, forks the game's launcher on its slave side and starts polling.  NO on failure (the launcher is
@@ -36,6 +39,10 @@ enum { GS_RUNNING = 1, GS_ENDED };
 - (BOOL)startReportingTo:(NSString **)why;
 - (const HkGameDef *)game;
 - (int)padMode;
+- (NSString *)endingPath;            /* the saved ending screen once the game is over, else nil */
+- (void)sendKeys:(const char *)keys;     /* as if typed */
+- (void)commandButton:(id)sender;
+- (void)commandMenu:(id)sender;
 - (void)setPadMode:(int)mode;      /* HK_PAD_*: Game > Keypad, when the game's own setting was changed in play */
 - (BOOL)isRunning;
 - (int)exitStatus;                 /* -1 while still running or if it couldn't be determined */

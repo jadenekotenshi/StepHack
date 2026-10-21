@@ -14,6 +14,7 @@
 - (void)setKeypad:(id)sender;
 - (void)showOptions:(id)sender;
 - (void)showScores:(id)sender;
+- (void)showEnding:(id)sender;
 - (void)showPreferences:(id)sender;
 - (void)sessionDidEnd:(GameSession *)session;
 @end

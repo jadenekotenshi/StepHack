@@ -7,6 +7,9 @@
 #ifndef HK_GAMES_H
 #define HK_GAMES_H
 
+/* Which commands a game has depends on the line it descends from. */
+enum { HK_FAMILY_34 = 1, HK_FAMILY_36 = 2, HK_FAMILY_50 = 4 };    /* NetHack 3.4.3 and its variants (Slash'EM), 3.6.x, 5.0 */
+
 typedef struct {
     const char *id;             /* short key for preferences: "nethack", "slashem" ... */
     const char *title;          /* shown in the menu */
@@ -16,6 +19,7 @@ typedef struct {
     const char *schema;         /* options schema name (the file schemas/<schema>.txt) */
     const char *line_option;    /* the boolean option that draws walls with line graphics ("DECgraphics"), NULL if unsure */
     int         verified;       /* 0 for a game whose OPENSTEP port is still being worked on */
+    int         family;         /* HK_FAMILY_* */
 } HkGameDef;
 
 int               hk_game_count(void);

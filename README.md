@@ -25,6 +25,13 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 - **Scores.** *Game > Scores...* (Cmd-S) shows the latest or the best finished games from the game's `xlogfile`, as a
   table, and the game's own high-score list (`-s` and `-s all`); it is text you can select and copy. Games that keep no
   `xlogfile` show only the high-score list.
+- **Command bar.** A row of buttons under the game (Pray, Name, Call, Loot, Chat, Enhance, Overview, Attrib) and a *More*
+  menu (Force, Untrap, Turn Undead, Offer, Sit, Ride, Wipe, Rub, Dip, Invoke, Jump, Monster, Adjust, Conduct, Discoveries,
+  Look Here, Redraw) type the command for you. They send extended commands, which every version takes whatever the
+  movement-key setting is, and only the ones the game has (no Overview for Slash'EM).
+- **Endings.** When a game finishes, what it left on the screen (tombstone, final attributes and inventory, high scores) is
+  saved as text under `~/.StepHack/endings` (the last 30 of each game). *Game > View Ending...* (Cmd-E) shows them; you can
+  copy or save one.
 - **Line drawing.** Walls drawn with `DECgraphics` are painted as real lines, whatever font you use.
 
 ## Games
@@ -43,7 +50,8 @@ locations can be changed in *Preferences*. NetHack 5.0 is listed but its port is
 
 On a development machine (macOS or Linux), the portable part builds and its tests run:
 
-    make test        # key mapping, options-file editing, terminal emulation
+    make test          # key mapping, options-file editing, option lists, score tables, terminal emulation
+    make session-smoke # a game session end to end on a real pty with a fake game (also runner-smoke, ending-smoke)
     make lint        # rejects anything OPENSTEP 4.2's compiler can't take
     make check-objc  # syntax-checks the Objective-C against the host's SDK
 

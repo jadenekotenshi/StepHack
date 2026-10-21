@@ -7,6 +7,7 @@
 #include "games.h"
 #include "schema.h"
 #include "xlog.h"
+#include "commands.h"
 
 static int bytes_are(const unsigned char *got, int n, const char *want)
 {
@@ -350,6 +351,30 @@ static void test_xlog(void)
     }
 }
 
+static void test_commands(void)
+{
+    int i, j, mains[3] = { 0, 0, 0 };
+
+    CHECK(hk_command_count() >= 20);
+    for (i = 0; i < hk_command_count(); i++) {
+        const HkCommand *c = hk_command(i);
+        CHECK(c && c->label[0] && c->keys[0] && c->tip[0] && c->families != 0);
+        /* extended commands are "#name" and Return; the rest are single keys */
+        CHECK((c->keys[0] == '#' && c->keys[strlen(c->keys) - 1] == '\r') || strlen(c->keys) == 1);
+        for (j = 0; j < i; j++) CHECK(strcmp(hk_command(j)->label, c->label) != 0);
+        for (j = 0; j < hk_game_count(); j++)
+            if (c->main && hk_command_in(c, hk_game(j))) mains[j]++;
+    }
+    CHECK(hk_command(-1) == NULL && hk_command(hk_command_count()) == NULL);
+    for (j = 0; j < hk_game_count(); j++) CHECK(mains[j] >= 6 && mains[j] <= 9);              /* a bar that fits the window */
+    /* the dungeon overview is not in the 3.4.3 line */
+    for (i = 0; i < hk_command_count(); i++)
+        if (strcmp(hk_command(i)->label, "Overview") == 0) {
+            CHECK(!hk_command_in(hk_command(i), hk_game_by_id("slashem")));
+            CHECK(hk_command_in(hk_command(i), hk_game_by_id("nethack")));
+        }
+}
+
 static void test_games(void)
 {
     const char *tc = hk_termcap_entry();
@@ -382,6 +407,7 @@ int main(void)
     test_games();
     test_schema();
     test_xlog();
+    test_commands();
     test_schema_apply();
     TEST_DONE("core");
 }

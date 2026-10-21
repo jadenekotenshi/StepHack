@@ -1,4 +1,5 @@
 #import "TerminalView.h"
+#include <stdlib.h>
 #import "UIHelpers.h"
 #include "nsenc.h"
 #include <string.h>
@@ -512,6 +513,41 @@ static unsigned cell_key(const vt_cell *c, int invert, int reverse_screen,
         n = [delegate terminalView:self translateKey:key mods:mods into:out];
     if (n <= 0) n = vt_encode_key(term, key, mods, out);
     if (n > 0) [delegate terminalView:self sendBytes:out length:n];
+}
+
+/* The whole of what the terminal holds, as text: the last maxLines lines of scrollback plus screen. */
+- (NSString *)transcript:(int)maxLines
+{
+    int sb = vt_scrollback_count(term), first, last, line, i, w;
+    NSMutableString *out = [NSMutableString string];
+    unichar *buf = (unichar *)malloc(sizeof(unichar) * (size_t)(cols + 2));
+
+    if (!buf) return @"";
+    first = -sb;
+    if (rows - first > maxLines) first = rows - maxLines;
+    last = rows - 1;
+    while (last >= first) {                                  /* trailing blank lines are dropped */
+        const vt_cell *cells = vt_line_at(term, last, &w);
+        BOOL blank = YES;
+        for (i = 0; cells && i < w; i++) if (cells[i].ch > ' ') { blank = NO; break; }
+        if (!blank) break;
+        last--;
+    }
+    for (line = first; line <= last; line++) {
+        const vt_cell *cells = vt_line_at(term, line, &w);
+        int n = 0;
+        for (i = 0; cells && i < w; i++) {
+            vt_u16 ch = cells[i].ch;
+            if (vt_box_arms(ch) || vt_block_kind(ch)) ch = vt_fallback_char(ch);
+            if (ch < ' ') ch = ' ';
+            buf[n++] = (unichar)ch;
+        }
+        while (n > 0 && buf[n - 1] == ' ') n--;
+        [out appendString:[NSString stringWithCharacters:buf length:n]];
+        [out appendString:@"\n"];
+    }
+    free(buf);
+    return out;
 }
 
 - (void)keyDown:(NSEvent *)theEvent
