@@ -37,6 +37,9 @@ HkSchema *hks_parse(const char *text);                 /* NULL if out of memory 
 void      hks_free(HkSchema *s);
 const char *hks_id(const HkSchema *s);
 const char *hks_title(const HkSchema *s);
+/* True for a list whose defaults are not fully checked against the game: every change is then written to the file, so
+ * nothing relies on the list's idea of a default.  (The "game" line's fourth field says "explicit".) */
+int       hks_explicit(const HkSchema *s);
 int       hks_count(const HkSchema *s);                /* items, groups included, in file order */
 const HkSchemaItem *hks_item(const HkSchema *s, int i);
 

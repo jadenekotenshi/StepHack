@@ -7,6 +7,7 @@ struct HkSchema {
     HkSchemaItem *item;
     int n, cap;
     const char *id, *title;
+    int explicit_defaults;
 };
 
 static const char EMPTY[] = "";
@@ -59,7 +60,7 @@ HkSchema *hks_parse(const char *text)
             if (*line == '\t') { *line = '\0'; f[nf++] = line + 1; }
         for (; *line; line++)                                      /* a stray extra tab stays in the last field */
             if (*line == '\t') *line = ' ';
-        if (strcmp(f[0], "game") == 0) { s->id = f[1]; s->title = f[2]; continue; }
+        if (strcmp(f[0], "game") == 0) { s->id = f[1]; s->title = f[2]; s->explicit_defaults = (strcmp(f[3], "explicit") == 0); continue; }
         it.def = f[2];
         it.label = f[3];
         it.extra = f[4];
@@ -87,6 +88,7 @@ void hks_free(HkSchema *s)
 
 const char *hks_id(const HkSchema *s) { return s->id; }
 const char *hks_title(const HkSchema *s) { return s->title; }
+int hks_explicit(const HkSchema *s) { return s->explicit_defaults; }
 int hks_count(const HkSchema *s) { return s->n; }
 
 const HkSchemaItem *hks_item(const HkSchema *s, int i)

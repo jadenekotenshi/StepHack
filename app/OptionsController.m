@@ -64,6 +64,7 @@ static NSMutableDictionary *controllers = nil;
 /* Options whose default the front end changes itself (see GameConfig): they are written even when equal to the game's own. */
 - (BOOL)alwaysWrite:(const HkSchemaItem *)it
 {
+    if (hks_explicit(schema)) return YES;
     if (strcmp(it->name, "number_pad") == 0) return YES;
     if (game->line_option && strcmp(it->name, game->line_option) == 0) return YES;
     return NO;

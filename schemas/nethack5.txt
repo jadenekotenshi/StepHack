@@ -1,0 +1,97 @@
+game	nethack5	NetHack 5.0	explicit	
+group	Movement and keys			
+enum	number_pad	0	Movement keys	0=Letter keys (h j k l y u b n)|1=Number pad|2=Number pad, 5 acts like i|3=Phone layout (1 2 3 across the top)|4=Number pad, letters also work|-1=Letter keys, y and z swapped
+bool	travel	1	The _ travel command is available	
+enum	runmode	run	How running is shown	teleport=Jump to the end|run=Fast|walk=Step by step|crawl=Slowly
+bool	autoopen	1	Open doors by walking into them	
+enum	autounlock	apply-key	When a door or box is locked	none=Do nothing|untrap=Untrap it|apply-key=Use a key or lock pick|kick=Kick it|force=Force it open
+bool	autodig	0	Dig when moving into rock while wielding a digging tool	
+bool	safe_wait	1	Waiting next to a hostile monster asks first	
+bool	fireassist	1	The fire command helps you wield and quiver	
+bool	rest_on_space	0	Space bar rests	
+bool	cmdassist	1	Help when a command is used wrongly	
+bool	herecmd_menu	0	Menu of commands for the square you are on	
+bool	extmenu	0	Menu for extended (#) commands	
+bool	ignintr	0	Ignore the interrupt key	
+group	Display			
+bool	DECgraphics	0	Draw walls with line graphics	
+bool	color	1	Use colour	
+bool	hilite_pet	0	Highlight your pet	
+bool	hilite_pile	0	Highlight piles of objects	
+bool	lit_corridor	0	Show lit corridor squares differently	
+bool	dark_room	1	Show remembered dark room squares	
+bool	use_inverse	1	Show detected monsters in inverse	
+bool	standout	0	Use standout (bold) for --More--	
+bool	sparkle	1	Show sparkling effects when monsters resist	
+bool	splash_screen	1	Show the splash screen at the start	
+bool	tombstone	1	Show a tombstone when you die	
+bool	timed_delay	0	Pause for animations	
+bool	eight_bit_tty	0	Pass 8-bit characters to the terminal	
+bool	autodescribe	1	Describe what is under the cursor while selecting	
+bool	mention_walls	0	Say when you bump into a wall	
+bool	mention_decor	0	Say when you walk over interesting features	
+group	Status line			
+enum	statuslines	2	Lines in the status display	2=Two|3=Three
+bool	time	0	Show the turn counter	
+bool	showexp	0	Show experience points	
+bool	showscore	0	Show the score	
+bool	showrace	0	Show your race instead of your role in the status line	
+bool	showvers	0	Show the game version in the status line	
+bool	showdamage	0	Show the damage you take	
+bool	hitpointbar	0	Show a bar behind the hit point figure	
+bool	status_updates	1	Let the status lines update	
+group	Messages and menus			
+enum	msg_window	single	Message history window	single=One message|combination=Combination|full=Full|reversed=Newest first
+enum	menustyle	full	Menu style	traditional=Traditional|combination=Combination|full=Full menus|partial=Partial
+int	msghistory	20	Messages kept in the history	0..1000
+bool	verbose	1	More detailed messages	
+bool	confirm	1	Confirm before attacking peaceful monsters	
+bool	menucolors	0	Colour menu lines that match MENUCOLOR patterns	
+bool	implicit_uncursed	1	Leave out the word uncursed when it can be inferred	
+bool	force_invmenu	0	Menu for the inventory commands	
+bool	whatis_menu	0	Menu of things to look at	
+bool	whatis_moveskip	0	Skip over similar squares when picking a position	
+bool	toptenwin	0	Show the high-score list in a window	
+bool	tips	1	Show helpful tips during play	
+bool	tutorial	1	Offer the tutorial	
+bool	legacy	1	Show the introduction at the start	
+bool	news	0	Show the news file at the start	
+bool	mail	1	Deliver mail	
+bool	acoustics	1	Hear noises	
+bool	silent	1	No bell	
+group	Pickup and inventory			
+bool	autopickup	0	Pick up objects when walking over them	
+text	pickup_types		Kinds of objects to pick up, such as $?!/="+ (empty: all)	
+enum	pickup_burden	stressed	Ask before pickup makes you	unencumbered=Unencumbered|burdened=Burdened|stressed=Stressed|strained=Strained|overtaxed=Overtaxed|overloaded=Overloaded
+int	pile_limit	5	Objects in a pile before only a count is shown	0..1000
+bool	pickup_thrown	1	Pick up what you threw	
+bool	pickup_stolen	1	Pick up what was stolen from you	
+bool	dropped_nopick	1	Do not pick up again what you dropped	
+bool	autoquiver	0	Fill the quiver automatically	
+bool	pushweapon	0	Keep the old weapon as the alternate when wielding another	
+bool	fixinv	1	Keep inventory letters fixed	
+bool	lootabc	0	Use a, b, c in the loot menu	
+bool	sortpack	1	Sort inventory by kind	
+enum	sortloot	loot	Sort lists of objects on the floor and in containers	none=Do not sort|loot=Containers only|full=Everything
+enum	sortdiscoveries	o	Order of the discoveries list	o=By class, in order of discovery|s=By class, sorted|c=By class|a=Alphabetical
+bool	perm_invent	0	Keep the inventory visible	
+group	Pets and names			
+enum	pettype		Starting pet	=Random|cat|dog|horse|none
+text	catname		Name of your kitten	
+text	dogname		Name of your little dog	
+text	horsename		Name of your pony	
+text	fruit		Name of your favourite fruit	
+bool	safe_pet	1	Do not hit your pet by walking into it	
+group	Game			
+bool	bones	1	Allow bones files	
+bool	help	1	Offer help on ?	
+text	paranoid_confirmation		Extra confirmations (words such as pray, Confirm, quit, die)	
+text	disclose		What to reveal when the game ends	
+text	scores		Which scores to list at the end	
+text	symset		Symbol set (DECgraphics, IBMgraphics, ...)	
+group	Character (used when a new game starts)			
+text	name		Your name	
+enum	role		Role	=Ask|Archeologist|Barbarian|Caveman|Healer|Knight|Monk|Priest|Rogue|Ranger|Samurai|Tourist|Valkyrie|Wizard
+enum	race		Race	=Ask|human|elf|dwarf|gnome|orc
+enum	gender		Gender	=Ask|male|female
+enum	align		Alignment	=Ask|lawful|neutral|chaotic

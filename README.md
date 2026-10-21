@@ -43,7 +43,7 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 | NetHack 5.0 | `/usr/local/bin/nethack5` | `/usr/local/lib/nethack5dir` | `~/.nethackrc` |
 
 These are where the [openstep-pkg](https://github.com/jadenekotenshi/openstep-pkg) packages install them. All three
-locations can be changed in *Preferences*. NetHack 5.0 is listed but its port is still being finished. More variants
+locations can be changed in *Preferences*. More variants
 (NetHack 3.4.3, UnNetHack, SporkHack, EvilHack, SpliceHack) are planned.
 
 ## Building

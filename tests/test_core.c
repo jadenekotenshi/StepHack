@@ -207,10 +207,10 @@ static void test_rc_robust(void)
 
 static void test_schema(void)
 {
-    const char *ids[] = { "nethack367", "slashem" };
+    const char *ids[] = { "nethack367", "slashem", "nethack5" };
     int g, i, j;
 
-    for (g = 0; g < 2; g++) {
+    for (g = 0; g < 3; g++) {
         char *text = hks_builtin(ids[g]);
         HkSchema *s;
         int groups = 0, opts = 0;
@@ -238,6 +238,7 @@ static void test_schema(void)
             }
         }
         CHECK(groups >= 4 && opts >= 40);
+        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0));
         hks_free(s);
     }
     CHECK(hks_builtin("nosuch") == NULL);
@@ -390,6 +391,8 @@ static void test_games(void)
     CHECK(strcmp(hk_game_by_id("nethack")->launcher, "/usr/local/bin/nethack") == 0);
     CHECK(strcmp(hk_game_by_id("slashem")->hackdir, "/usr/local/slashemdir") == 0);
     CHECK(strcmp(hk_game_by_id("slashem")->rcname, ".slashemrc") == 0);
+    CHECK(strcmp(hk_game_by_id("nethack5")->launcher, "/usr/local/bin/nethack5") == 0 && hk_game_by_id("nethack5")->verified);
+    CHECK(strcmp(hk_game_by_id("nethack5")->hackdir, "/usr/local/lib/nethack5dir") == 0);
     CHECK(strcmp(hk_game_by_id("nethack")->line_option, "DECgraphics") == 0 && strcmp(hk_game_by_id("slashem")->line_option, "DECgraphics") == 0);
     /* the termcap entry must fit a classic environment variable and be well formed */
     CHECK(strlen(tc) < 1000);
