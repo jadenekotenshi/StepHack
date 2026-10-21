@@ -1,0 +1,29 @@
+/*
+ * games.h -- what the front end knows about each game before the user has told it anything: where the OPENSTEP packages
+ * install it, what its run-commands file is called, and the terminal description it is run under.
+ *
+ * Pure C89, no I/O.
+ */
+#ifndef HK_GAMES_H
+#define HK_GAMES_H
+
+typedef struct {
+    const char *id;             /* short key for preferences: "nethack", "slashem" ... */
+    const char *title;          /* shown in the menu */
+    const char *launcher;       /* the script or program that starts it (it sets HACKDIR itself) */
+    const char *hackdir;        /* the game's data directory */
+    const char *rcname;         /* run-commands file in the user's home directory */
+    const char *schema;         /* options schema name (the file schemas/<schema>.txt) */
+    int         verified;       /* 0 for a game whose OPENSTEP port is still being worked on */
+} HkGameDef;
+
+int               hk_game_count(void);
+const HkGameDef  *hk_game(int index);                 /* NULL if out of range */
+const HkGameDef  *hk_game_by_id(const char *id);
+
+/* The termcap entry the games are run under (set as TERM and TERMCAP in their environment), so they get colours, line
+ * drawing and cursor addressing that the terminal emulator really supports whatever /etc/termcap says. */
+#define HK_TERM_NAME "stephack"
+const char       *hk_termcap_entry(void);
+
+#endif

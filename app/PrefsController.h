@@ -1,0 +1,17 @@
+#import "Compat.h"
+
+/* Preferences: where each game is installed, and whether movement defaults to the number pad. */
+@interface PrefsController : NSObject
+{
+    NSWindow      *window;
+    NSPopUpButton *gamePop;
+    NSTextField   *launcherField, *hackdirField, *rcField;
+    NSButton      *padSwitch;
+    int            shown;                 /* index in the game table of the game the fields show */
+}
++ (PrefsController *)sharedController;
+- (void)showWindow;
+- (void)gameChanged:(id)sender;
+- (void)restoreDefaults:(id)sender;
+- (void)padChanged:(id)sender;
+@end
