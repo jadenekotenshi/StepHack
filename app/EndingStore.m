@@ -29,11 +29,12 @@ static NSString *overrideDir = nil;
 
 + (NSString *)directory
 {
-    if (overrideDir) return overrideDir;
     NSFileManager *fm = [NSFileManager defaultManager];
     NSString *base = [NSHomeDirectory() stringByAppendingPathComponent:@".StepHack"];
     NSString *dir = [base stringByAppendingPathComponent:@"endings"];
     BOOL isDir = NO;
+
+    if (overrideDir) return overrideDir;
     if (![fm fileExistsAtPath:dir isDirectory:&isDir]) {
         [fm createDirectoryAtPath:base attributes:nil];
         [fm createDirectoryAtPath:dir attributes:nil];

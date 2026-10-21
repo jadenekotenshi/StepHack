@@ -40,7 +40,7 @@ check-objc:
 	for f in app/*.m; do \
 	  echo "check $$f"; \
 	  $(CC) -fsyntax-only -x objective-c -fno-objc-arc -Wall -Wno-deprecated-declarations \
-	    -Wdeclaration-after-statement -Wno-unused-parameter -Iterm -Icore -Iapp $$f || exit 1; \
+	    -Werror=declaration-after-statement -Wno-unused-parameter -Iterm -Icore -Iapp $$f || exit 1; \
 	done
 
 # Runs real programs through ProcessRunner (host only).
