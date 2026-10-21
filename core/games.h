@@ -14,6 +14,7 @@ typedef struct {
     const char *hackdir;        /* the game's data directory */
     const char *rcname;         /* run-commands file in the user's home directory */
     const char *schema;         /* options schema name (the file schemas/<schema>.txt) */
+    const char *line_option;    /* the boolean option that draws walls with line graphics ("DECgraphics"), NULL if unsure */
     int         verified;       /* 0 for a game whose OPENSTEP port is still being worked on */
 } HkGameDef;
 

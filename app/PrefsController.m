@@ -21,7 +21,7 @@ static PrefsController *shared = nil;
 
 - (void)buildWindow
 {
-    NSRect content = NSMakeRect(0, 0, 480, 236);
+    NSRect content = NSMakeRect(0, 0, 480, 262);
     NSView *v;
     int i;
 
@@ -34,30 +34,36 @@ static PrefsController *shared = nil;
     [window setDelegate:(id)self];
     v = [window contentView];
 
-    [v addSubview:ui_label(@"Game:", NSMakeRect(16, 196, 110, 18))];
-    gamePop = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(130, 192, 330, 24) pullsDown:NO];
+    [v addSubview:ui_label(@"Game:", NSMakeRect(16, 222, 110, 18))];
+    gamePop = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(130, 218, 330, 24) pullsDown:NO];
     for (i = 0; i < hk_game_count(); i++) [gamePop addItemWithTitle:[NSString stringWithCString:hk_game(i)->title]];
     [gamePop setTarget:self];
     [gamePop setAction:@selector(gameChanged:)];
     [v addSubview:gamePop];
 
-    [v addSubview:ui_label(@"Program:", NSMakeRect(16, 160, 110, 18))];
-    launcherField = ui_field(NSMakeRect(130, 158, 334, 22));
+    [v addSubview:ui_label(@"Program:", NSMakeRect(16, 186, 110, 18))];
+    launcherField = ui_field(NSMakeRect(130, 184, 334, 22));
     [v addSubview:launcherField];
-    [v addSubview:ui_label(@"Data directory:", NSMakeRect(16, 128, 110, 18))];
-    hackdirField = ui_field(NSMakeRect(130, 126, 334, 22));
+    [v addSubview:ui_label(@"Data directory:", NSMakeRect(16, 154, 110, 18))];
+    hackdirField = ui_field(NSMakeRect(130, 152, 334, 22));
     [v addSubview:hackdirField];
-    [v addSubview:ui_label(@"Options file:", NSMakeRect(16, 96, 110, 18))];
-    rcField = ui_field(NSMakeRect(130, 94, 334, 22));
+    [v addSubview:ui_label(@"Options file:", NSMakeRect(16, 122, 110, 18))];
+    rcField = ui_field(NSMakeRect(130, 120, 334, 22));
     [v addSubview:rcField];
 
     padSwitch = ui_switch(@"Move with the number pad: add number_pad:1 to an options file that doesn't set it",
-                          NSMakeRect(16, 54, 448, 30));
+                          NSMakeRect(16, 80, 448, 30));
     [padSwitch setTarget:self];
     [padSwitch setAction:@selector(padChanged:)];
     [v addSubview:padSwitch];
 
-    [v addSubview:ui_button(@"Restore Defaults", NSMakeRect(16, 14, 130, 26), self, @selector(restoreDefaults:))];
+    lineSwitch = ui_switch(@"Draw walls with line graphics: add DECgraphics to an options file that sets no symbols",
+                           NSMakeRect(16, 48, 448, 30));
+    [lineSwitch setTarget:self];
+    [lineSwitch setAction:@selector(lineChanged:)];
+    [v addSubview:lineSwitch];
+
+    [v addSubview:ui_button(@"Restore Defaults", NSMakeRect(16, 12, 130, 26), self, @selector(restoreDefaults:))];
     [window center];
 }
 
@@ -69,6 +75,7 @@ static PrefsController *shared = nil;
     [hackdirField setStringValue:[GameConfig hackdirForGame:g]];
     [rcField setStringValue:[GameConfig rcPathForGame:g]];
     [padSwitch setState:[GameConfig defaultToNumberPad] ? NSOnState : NSOffState];
+    [lineSwitch setState:[GameConfig defaultToLineGraphics] ? NSOnState : NSOffState];
 }
 
 /* A value equal to the built-in default is stored as "unset", so a later change of the default reaches it. */
@@ -116,6 +123,11 @@ static PrefsController *shared = nil;
 - (void)padChanged:(id)sender
 {
     [GameConfig setDefaultToNumberPad:([padSwitch state] == NSOnState)];
+}
+
+- (void)lineChanged:(id)sender
+{
+    [GameConfig setDefaultToLineGraphics:([lineSwitch state] == NSOnState)];
 }
 
 - (void)windowWillClose:(NSNotification *)notification

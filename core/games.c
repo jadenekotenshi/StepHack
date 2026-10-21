@@ -2,9 +2,9 @@
 #include "games.h"
 
 static const HkGameDef GAMES[] = {
-    { "nethack",  "NetHack 3.6.7",    "/usr/local/bin/nethack",  "/usr/local/lib/nethackdir",  ".nethackrc", "nethack367", 1 },
-    { "slashem",  "Slash'EM 0.0.7",   "/usr/local/bin/slashem",  "/usr/local/slashemdir",      ".slashemrc", "slashem",    1 },
-    { "nethack5", "NetHack 5.0",      "/usr/local/bin/nethack5", "/usr/local/lib/nethack5dir", ".nethackrc", "nethack5",   0 }
+    { "nethack",  "NetHack 3.6.7",    "/usr/local/bin/nethack",  "/usr/local/lib/nethackdir",  ".nethackrc", "nethack367", "DECgraphics", 1 },
+    { "slashem",  "Slash'EM 0.0.7",   "/usr/local/bin/slashem",  "/usr/local/slashemdir",      ".slashemrc", "slashem",    "DECgraphics", 1 },
+    { "nethack5", "NetHack 5.0",      "/usr/local/bin/nethack5", "/usr/local/lib/nethack5dir", ".nethackrc", "nethack5",   NULL, 0 }
 };
 
 int hk_game_count(void) { return (int)(sizeof(GAMES) / sizeof(GAMES[0])); }

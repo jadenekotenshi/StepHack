@@ -217,6 +217,7 @@ static void test_games(void)
     CHECK(strcmp(hk_game_by_id("nethack")->launcher, "/usr/local/bin/nethack") == 0);
     CHECK(strcmp(hk_game_by_id("slashem")->hackdir, "/usr/local/slashemdir") == 0);
     CHECK(strcmp(hk_game_by_id("slashem")->rcname, ".slashemrc") == 0);
+    CHECK(strcmp(hk_game_by_id("nethack")->line_option, "DECgraphics") == 0 && strcmp(hk_game_by_id("slashem")->line_option, "DECgraphics") == 0);
     /* the termcap entry must fit a classic environment variable and be well formed */
     CHECK(strlen(tc) < 1000);
     CHECK(strncmp(tc, HK_TERM_NAME "|", strlen(HK_TERM_NAME) + 1) == 0);

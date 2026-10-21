@@ -10,7 +10,11 @@
 + (BOOL)defaultToNumberPad;                                                           /* add number_pad:1 to a run-commands file that doesn't set it */
 + (void)setDefaultToNumberPad:(BOOL)flag;
 
-/* Reads the game's run-commands file and returns its number_pad value (0 when the file doesn't set it).  When
- * defaultToNumberPad is on and the file leaves it unset, writes number_pad:1 into the file first (creating it). */
++ (BOOL)defaultToLineGraphics;                                                        /* add DECgraphics to a file that sets no symbol set */
++ (void)setDefaultToLineGraphics:(BOOL)flag;
+
+/* Reads the game's run-commands file and returns its number_pad value (0 when the file doesn't set it).  First, for each
+ * default that is switched on (number_pad:1; the game's line-graphics option) and that the file leaves unset, writes it
+ * into the file (creating it).  An option the user has set either way, or a symbol set they chose, is never touched. */
 + (int)numberPadForGame:(const HkGameDef *)g;
 @end

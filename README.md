@@ -15,6 +15,9 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
   A real keypad works as it always did. *Game > Keypad* switches the mapping if you change `number_pad` in play.
 - **`number_pad` on by default.** If your options file doesn't set `number_pad`, StepHack adds `OPTIONS=number_pad:1` to
   it (switch this off in Preferences).
+- **Line graphics by default.** If your options file sets no symbols (`DECgraphics`, `symset`, `IBMgraphics`), StepHack adds
+  `OPTIONS=DECgraphics` so walls are drawn as lines (also switchable in Preferences). Anything you have set yourself, in
+  either direction, is left alone.
 - **Options file editing without disturbing it.** The reader and writer in `core/rcfile.c` keep your comments, other
   directives and layout, and change only the option concerned. (The options window itself is the next thing to be built.)
 - **Line drawing.** Walls drawn with `DECgraphics` are painted as real lines, whatever font you use.
