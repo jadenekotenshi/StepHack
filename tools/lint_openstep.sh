@@ -64,5 +64,10 @@ if command -v python3 >/dev/null 2>&1; then
     python3 tools/check_method_order.py >/dev/null || { python3 tools/check_method_order.py; status=1; }
 fi
 
+# --- the compiled-in option lists must match schemas/ ---
+if command -v python3 >/dev/null 2>&1; then
+    python3 tools/gen_schemas.py --check || status=1
+fi
+
 if [ $status -eq 0 ]; then echo "lint: clean"; fi
 exit $status

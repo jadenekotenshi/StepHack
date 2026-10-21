@@ -12,6 +12,7 @@
 - (void)newGame:(id)sender;
 - (void)newLastGame:(id)sender;
 - (void)setKeypad:(id)sender;
+- (void)showOptions:(id)sender;
 - (void)showPreferences:(id)sender;
 - (void)sessionDidEnd:(GameSession *)session;
 @end

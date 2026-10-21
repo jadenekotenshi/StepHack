@@ -5,6 +5,7 @@
 #include "keymap.h"
 #include "rcfile.h"
 #include "games.h"
+#include "schema.h"
 
 static int bytes_are(const unsigned char *got, int n, const char *want)
 {
@@ -202,6 +203,99 @@ static void test_rc_robust(void)
     }
 }
 
+static void test_schema(void)
+{
+    const char *ids[] = { "nethack367", "slashem" };
+    int g, i, j;
+
+    for (g = 0; g < 2; g++) {
+        char *text = hks_builtin(ids[g]);
+        HkSchema *s;
+        int groups = 0, opts = 0;
+        CHECK(text != NULL);
+        s = hks_parse(text);
+        free(text);
+        CHECK(s != NULL && strcmp(hks_id(s), ids[g]) == 0 && hks_title(s)[0] != '\0');
+        if (!s) continue;
+        for (i = 0; i < hks_count(s); i++) {
+            const HkSchemaItem *it = hks_item(s, i);
+            char v[64], l[128];
+            int lo, hi;
+            if (it->kind == HKS_GROUP) { groups++; CHECK(it->name[0] != '\0'); continue; }
+            opts++;
+            CHECK(it->name[0] != '\0' && it->label[0] != '\0');
+            for (j = 0; j < i; j++)                                    /* no option listed twice */
+                if (hks_item(s, j)->kind != HKS_GROUP) CHECK(strcmp(hks_item(s, j)->name, it->name) != 0);
+            if (it->kind == HKS_BOOL) CHECK(strcmp(it->def, "0") == 0 || strcmp(it->def, "1") == 0);
+            if (it->kind == HKS_ENUM) {
+                CHECK(hks_choice(it, 0, v, sizeof(v), l, sizeof(l)));
+                CHECK(hks_choice_index(it, it->def) >= 0);              /* the default is one of the choices */
+            }
+            if (it->kind == HKS_INT) {
+                CHECK(hks_int_range(it, &lo, &hi) && lo <= hi && atoi(it->def) >= lo && atoi(it->def) <= hi);
+            }
+        }
+        CHECK(groups >= 4 && opts >= 40);
+        hks_free(s);
+    }
+    CHECK(hks_builtin("nosuch") == NULL);
+    {
+        /* parsing odd input */
+        HkSchema *s = hks_parse("game\tx\tX\nbogus\tline\nbool\tfoo\t1\tFoo\nbool\t\t1\tno name\n# c\n\nenum\te\t\tE\t=A|b=B|c");
+        char v[16], l[16];
+        CHECK(s != NULL && hks_count(s) == 2);                         /* the unknown line and the nameless one are skipped */
+        CHECK(hks_choice(hks_item(s, 1), 0, v, sizeof(v), l, sizeof(l)) && v[0] == '\0' && strcmp(l, "A") == 0);
+        CHECK(hks_choice(hks_item(s, 1), 1, v, sizeof(v), l, sizeof(l)) && strcmp(v, "b") == 0 && strcmp(l, "B") == 0);
+        CHECK(hks_choice(hks_item(s, 1), 2, v, sizeof(v), l, sizeof(l)) && strcmp(v, "c") == 0 && strcmp(l, "c") == 0);
+        CHECK(!hks_choice(hks_item(s, 1), 3, v, sizeof(v), l, sizeof(l)));
+        CHECK(hks_choice_index(hks_item(s, 1), "B") == 1 && hks_choice_index(hks_item(s, 1), "z") == -1);
+        hks_free(s);
+        CHECK(hks_parse("bool\tfoo\t1\tFoo\n") == NULL);              /* no game line */
+        CHECK(hks_parse("") == NULL);
+    }
+}
+
+static void test_schema_apply(void)
+{
+    HkSchema *s = hks_parse("game\tx\tX\n"
+                            "bool\tcolor\t1\tColour\n"
+                            "bool\ttime\t0\tTime\n"
+                            "enum\tnumber_pad\t0\tKeys\t0=A|1=B|2=C\n"
+                            "int\tmsghistory\t20\tMsgs\t0..100\n"
+                            "text\tfruit\t\tFruit\n");
+    const HkSchemaItem *color = hks_item(s, 0), *tm = hks_item(s, 1), *pad = hks_item(s, 2), *mh = hks_item(s, 3), *fr = hks_item(s, 4);
+    HkRc *rc = hkrc_parse("OPTIONS=!color,fruit:kumquat\n", 29);
+    char v[64], *t;
+    const char *cv;
+    size_t len;
+
+    hks_effective(rc, color, v, sizeof(v));  CHECK(strcmp(v, "0") == 0);
+    hks_effective(rc, tm, v, sizeof(v));     CHECK(strcmp(v, "0") == 0);
+    hks_effective(rc, pad, v, sizeof(v));    CHECK(strcmp(v, "0") == 0);
+    hks_effective(rc, fr, v, sizeof(v));     CHECK(strcmp(v, "kumquat") == 0);
+    CHECK(hks_is_set(rc, color) && !hks_is_set(rc, tm));
+
+    CHECK(hks_apply(rc, color, "1", 0) == 0);                          /* back to the default: removed */
+    CHECK(!hks_is_set(rc, color));
+    CHECK(hks_apply(rc, tm, "1", 0) == 0);  CHECK(hkrc_find(rc, "time", &cv) == HKRC_BOOL && strcmp(cv, "1") == 0);
+    CHECK(hks_apply(rc, tm, "0", 0) == 0);  CHECK(!hks_is_set(rc, tm));
+    CHECK(hks_apply(rc, tm, "0", 1) == 0);  CHECK(hks_is_set(rc, tm));  /* always_write keeps a default explicit */
+    CHECK(hks_apply(rc, pad, "1", 0) == 0); hks_effective(rc, pad, v, sizeof(v)); CHECK(strcmp(v, "1") == 0);
+    CHECK(hks_apply(rc, pad, "0", 1) == 0); CHECK(hks_is_set(rc, pad));
+    hks_effective(rc, pad, v, sizeof(v));    CHECK(strcmp(v, "0") == 0);
+    CHECK(hks_apply(rc, pad, "0", 0) == 0); CHECK(!hks_is_set(rc, pad));
+    CHECK(hks_apply(rc, mh, "500", 0) == 0); hks_effective(rc, mh, v, sizeof(v)); CHECK(strcmp(v, "100") == 0);     /* clamped */
+    CHECK(hks_apply(rc, mh, "-5", 0) == 0);  hks_effective(rc, mh, v, sizeof(v)); CHECK(strcmp(v, "0") == 0);
+    CHECK(hks_apply(rc, mh, "20", 0) == 0);  CHECK(!hks_is_set(rc, mh));
+    CHECK(hks_apply(rc, fr, "", 0) == 0);    CHECK(!hks_is_set(rc, fr));
+    CHECK(hks_apply(rc, fr, "slime mold", 0) == 0); hks_effective(rc, fr, v, sizeof(v)); CHECK(strcmp(v, "slime mold") == 0);
+    t = hkrc_text(rc, &len);
+    CHECK(t && strstr(t, "fruit:slime mold") && strstr(t, "msghistory") == NULL);
+    free(t);
+    hkrc_free(rc);
+    hks_free(s);
+}
+
 static void test_games(void)
 {
     const char *tc = hk_termcap_entry();
@@ -232,5 +326,7 @@ int main(void)
     test_rc_edit();
     test_rc_robust();
     test_games();
+    test_schema();
+    test_schema_apply();
     TEST_DONE("core");
 }

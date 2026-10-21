@@ -18,8 +18,10 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 - **Line graphics by default.** If your options file sets no symbols (`DECgraphics`, `symset`, `IBMgraphics`), StepHack adds
   `OPTIONS=DECgraphics` so walls are drawn as lines (also switchable in Preferences). Anything you have set yourself, in
   either direction, is left alone.
-- **Options file editing without disturbing it.** The reader and writer in `core/rcfile.c` keep your comments, other
-  directives and layout, and change only the option concerned. (The options window itself is the next thing to be built.)
+- **An options window.** *Game > Options...* (Cmd-O) lists the game's options as switches, pop-up menus and fields,
+  grouped by topic, and saves them to its options file. It keeps your comments, other directives (`MSGTYPE=`,
+  `MENUCOLOR=` ...) and layout, and changes only the option you touched; an option set back to the game's own default is
+  removed from the file. The lists are in `schemas/` (NetHack 3.6.7 and Slash'EM so far) and are compiled in.
 - **Line drawing.** Walls drawn with `DECgraphics` are painted as real lines, whatever font you use.
 
 ## Games
@@ -51,7 +53,8 @@ On OPENSTEP 4.2 (gcc 2.7.2):
 
 ## Layout
 
-- `core/` - portable C89 with no I/O and its own tests: the key mapping, the options-file editor and the game table.
+- `core/` - portable C89 with no I/O and its own tests: the key mapping, the options-file editor, the option lists and the game table.
+- `schemas/` - the option lists, one text file per game; `tools/gen_schemas.py` compiles them into `core/schema_data.c`.
 - `term/` - the terminal emulator (shared with StepTTY, StepSSH and RatChat).
 - `app/` - the Objective-C application.
 
