@@ -547,9 +547,9 @@ static char *env_entry(const char *name, const char *value)
     }
 }
 
-- (int)terminalView:(id)tv translateKey:(int)key mods:(int)mods into:(unsigned char *)out
+- (int)terminalView:(id)tv translateKey:(int)key mods:(int)mods into:(unsigned char *)bytes
 {
-    return hk_map_key(padMode, key, mods, out);
+    return hk_map_key(padMode, key, mods, bytes);
 }
 
 - (void)terminalView:(id)tv resizedToCols:(int)cols rows:(int)rows

@@ -5,9 +5,9 @@
 @interface NSObject (TerminalViewDelegate)
 - (void)terminalView:(id)tv sendBytes:(const unsigned char *)bytes length:(int)n;
 - (void)terminalView:(id)tv resizedToCols:(int)cols rows:(int)rows;
-/* Optional: a chance to turn a cursor-style key (VT_KEY_* from vt.h, with VT_MOD_* bits) into other bytes, written to out
+/* Optional: a chance to turn a cursor-style key (VT_KEY_* from vt.h, with VT_MOD_* bits) into other bytes, written to bytes
  * (32 bytes).  Return their count, or 0 to have the key encoded the usual way. */
-- (int)terminalView:(id)tv translateKey:(int)key mods:(int)mods into:(unsigned char *)out;
+- (int)terminalView:(id)tv translateKey:(int)key mods:(int)mods into:(unsigned char *)bytes;
 @end
 
 @interface TerminalView : NSView

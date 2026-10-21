@@ -24,6 +24,14 @@ extern void PSshow(const char *s);
 @end
 #endif
 
+/* OPENSTEP 4.2's AppKit does not declare NSOnState / NSOffState ("undeclared": found on i386 when StepAmp was first
+ * built there).  -setState: takes a plain int on that release, 1 for on and 0 for off; the modern SDK has them as
+ * enum constants, so they are only defined for OPENSTEP. */
+#ifdef OPENSTEP
+#define NSOnState  1
+#define NSOffState 0
+#endif
+
 /* [V] Characters delivered by -[NSEvent characters] for function keys: the
  * Unicode private-use codes NSEvent.h calls NSUpArrowFunctionKey etc.  Named
  * differently here so they cannot collide with the system header. */

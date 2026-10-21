@@ -17,6 +17,7 @@ check "@property/@synthesize/@autoreleasepool"              '@(property|synthesi
 check "blocks"                                              '\^[[:space:]]*\{|\^[[:space:]]*\([^)]*\)[[:space:]]*\{' $OBJC
 check "dot syntax on objects / literals"                    '@\[|@\{|@[0-9(]'                     $OBJC
 check "fast enumeration"                                    'for[[:space:]]*\([^;)]*[[:space:]]in[[:space:]]' $OBJC
+check "Objective-C method parameter named in/out/inout/bycopy/byref/oneway (gcc 2.7.2 reads it as a type qualifier)" '^[-+][[:space:]]*\([^)]*\)[^{;]*:\([^)]*\)[[:space:]]*(in|out|inout|bycopy|byref|oneway)\b' $OBJC
 check "modern integer types (NSInteger/CGFloat/...)"        '\b(NSInteger|NSUInteger|CGFloat|CGRect|CGPoint|instancetype|nullable|__weak|__strong)\b' $OBJC
 check "stdint / stdbool / inline / restrict"                '#include[[:space:]]*<(stdint|stdbool|inttypes)\.h>|\binline\b|\brestrict\b' term/*.c term/*.h core/*.c core/*.h
 check "declaration in for-init (C99)"                       'for[[:space:]]*\((int|unsigned|size_t|u8|u32)[[:space:]]+[a-z_]+[[:space:]]*=' term/*.c
