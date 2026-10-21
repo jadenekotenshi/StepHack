@@ -3,7 +3,7 @@
 # no mixed declarations, no stdint.
 CC      ?= cc
 CFLAGS  = -std=c89 -pedantic -Wall -Wextra -Wdeclaration-after-statement \
-          -Wno-long-long -Wno-unused-parameter -O2 -g -Iterm -Icore
+          -Wno-long-long -Wno-unused-parameter -Wno-deprecated-declarations -O2 -g -Iterm -Icore
 BUILD   = build
 
 TERM_SRC = $(wildcard term/*.c)
@@ -43,7 +43,17 @@ check-objc:
 	    -Wdeclaration-after-statement -Wno-unused-parameter -Iterm -Icore -Iapp $$f || exit 1; \
 	done
 
+# Runs real programs through ProcessRunner (host only).
+runner-smoke:
+	mkdir -p build
+	for f in tests/runner_smoke.m app/ProcessRunner.m app/GameEnv.m app/UIHelpers.m; do \
+	  $(CC) -c -x objective-c -fno-objc-arc -w -g -Iterm -Icore -Iapp $$f -o build/rs_$$(basename $$f .m).o || exit 1; \
+	done
+	$(CC) -c -w -g -Icore core/games.c -o build/rs_games.o
+	$(CC) build/rs_*.o -framework Foundation -framework AppKit -o build/runner_smoke
+	build/runner_smoke
+
 clean:
 	rm -rf build
 
-.PHONY: all test lint check-objc clean
+.PHONY: all test lint check-objc runner-smoke clean

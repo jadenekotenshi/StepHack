@@ -6,6 +6,7 @@
 #include "rcfile.h"
 #include "games.h"
 #include "schema.h"
+#include "xlog.h"
 
 static int bytes_are(const unsigned char *got, int n, const char *want)
 {
@@ -296,6 +297,59 @@ static void test_schema_apply(void)
     hks_free(s);
 }
 
+static void test_xlog(void)
+{
+    const char *text =
+        "version=3.6.7\tpoints=1200\tdeathdnum=0\tdeathlev=3\tmaxlvl=4\tdeathdate=20261019\trole=Val\trace=Hum\tgender=Fem\talign=Law\tname=Jade\tdeath=killed by a jackal\tturns=412\n"
+        "\n"
+        "version=3.6.7\tpoints=98765\tdeathlev=12\tmaxlvl=12\tdeathdate=20261020\trole=Wiz\trace=Elf\tgender=Mal\talign=Cha\tname=Mage\tdeath=ascended\tturns=30211\n"
+        "garbage line without fields\n"
+        "version=3.6.7:points=50:name=Colon:death=starved:deathdate=20261021:role=Arc\r\n";
+    HkXlog *x = hkx_parse(text, strlen(text));
+    char *r;
+    const char *p;
+
+    CHECK(x != NULL && hkx_count(x) == 3);                                 /* the blank and the field-less lines are not games */
+    CHECK((p = hkx_get(x, 0, "points")) != NULL && strcmp(p, "1200") == 0);
+    CHECK((p = hkx_get(x, 1, "death")) != NULL && strcmp(p, "ascended") == 0);
+    CHECK((p = hkx_get(x, 2, "name")) != NULL && strcmp(p, "Colon") == 0);        /* colon-separated lines too */
+    CHECK((p = hkx_get(x, 2, "role")) != NULL && strcmp(p, "Arc") == 0);          /* with the CR dropped */
+    CHECK(hkx_get(x, 0, "nosuch") == NULL && hkx_get(x, 3, "name") == NULL && hkx_get(x, -1, "name") == NULL);
+
+    r = hkx_report(x, HKX_RECENT, 0);
+    CHECK(r != NULL && strstr(r, "Date") == r);
+    CHECK(strstr(r, "2026-10-21") && strstr(r, "2026-10-20") && strstr(r, "2026-10-19"));
+    CHECK(strstr(r, "2026-10-21") < strstr(r, "2026-10-20") && strstr(r, "2026-10-20") < strstr(r, "2026-10-19"));     /* newest first */
+    CHECK(strstr(r, "killed by a jackal  (level 3, deepest 4)") != NULL);
+    CHECK(strstr(r, "Val Hum Fem Law") != NULL && strstr(r, "     98765") != NULL);
+    free(r);
+
+    r = hkx_report(x, HKX_BEST, 0);
+    CHECK(r && strstr(r, "98765") < strstr(r, "1200") && strstr(r, "1200") < strstr(r, " 50 "));                          /* by points */
+    free(r);
+    r = hkx_report(x, HKX_RECENT, 1);
+    CHECK(r && strstr(r, "Colon") != NULL && strstr(r, "Mage") == NULL);                                                  /* only the latest */
+    free(r);
+    hkx_free(x);
+
+    x = hkx_parse("", 0);
+    r = hkx_report(x, HKX_RECENT, 10);
+    CHECK(x && hkx_count(x) == 0 && r && strstr(r, "no games recorded") != NULL);
+    free(r);
+    hkx_free(x);
+    {   /* very long fields are cut, not overflowed */
+        char big[3000];
+        memset(big, 'x', sizeof(big));
+        memcpy(big, "name=", 5);
+        big[2998] = '\n'; big[2999] = '\0';
+        x = hkx_parse(big, strlen(big));
+        r = hkx_report(x, HKX_RECENT, 0);
+        CHECK(x && r && strlen(r) < 500);
+        free(r);
+        hkx_free(x);
+    }
+}
+
 static void test_games(void)
 {
     const char *tc = hk_termcap_entry();
@@ -327,6 +381,7 @@ int main(void)
     test_rc_robust();
     test_games();
     test_schema();
+    test_xlog();
     test_schema_apply();
     TEST_DONE("core");
 }

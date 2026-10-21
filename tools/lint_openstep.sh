@@ -21,7 +21,7 @@ check "Objective-C method parameter named in/out/inout/bycopy/byref/oneway (gcc 
 check "modern integer types (NSInteger/CGFloat/...)"        '\b(NSInteger|NSUInteger|CGFloat|CGRect|CGPoint|instancetype|nullable|__weak|__strong)\b' $OBJC
 check "stdint / stdbool / inline / restrict"                '#include[[:space:]]*<(stdint|stdbool|inttypes)\.h>|\binline\b|\brestrict\b' term/*.c term/*.h core/*.c core/*.h
 check "declaration in for-init (C99)"                       'for[[:space:]]*\((int|unsigned|size_t|u8|u32)[[:space:]]+[a-z_]+[[:space:]]*=' term/*.c
-check "snprintf/vsnprintf (not guaranteed on 4.2)"          '\bv?snprintf\b'                      term/*.c app/*.m
+check "snprintf/vsnprintf (not guaranteed on 4.2)"          '\bv?snprintf\b'                      term/*.c core/*.c app/*.m
 
 # --- APIs added after OpenStep 4.2 ---
 check "NSString drawing (drawAtPoint:withAttributes:) -- use PSshow"   'drawAtPoint|drawInRect:.*withAttributes|sizeWithAttributes' $OBJC

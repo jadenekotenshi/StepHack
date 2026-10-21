@@ -35,8 +35,8 @@ ICONTIFF  = app/StepHack.tiff
 ICONFLAGS = -sectcreate __ICON __header $(ICONHDR) -segprot __ICON r r -sectcreate __ICON app $(ICONTIFF)
 
 TERM_OBJS = term/nsenc.o term/vt.o
-CORE_OBJS = core/keymap.o core/rcfile.o core/games.o core/schema.o core/schema_data.o
-APP_OBJS  = app/AppController.o app/GameSession.o app/GameConfig.o app/PrefsController.o app/OptionsController.o app/TerminalView.o app/UIHelpers.o app/main.o
+CORE_OBJS = core/keymap.o core/rcfile.o core/games.o core/schema.o core/schema_data.o core/xlog.o
+APP_OBJS  = app/AppController.o app/GameSession.o app/GameConfig.o app/PrefsController.o app/OptionsController.o app/ScoresController.o app/ProcessRunner.o app/GameEnv.o app/TerminalView.o app/UIHelpers.o app/main.o
 
 .SUFFIXES: .c .m .o
 

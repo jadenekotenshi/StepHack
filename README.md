@@ -22,6 +22,9 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
   grouped by topic, and saves them to its options file. It keeps your comments, other directives (`MSGTYPE=`,
   `MENUCOLOR=` ...) and layout, and changes only the option you touched; an option set back to the game's own default is
   removed from the file. The lists are in `schemas/` (NetHack 3.6.7 and Slash'EM so far) and are compiled in.
+- **Scores.** *Game > Scores...* (Cmd-S) shows the latest or the best finished games from the game's `xlogfile`, as a
+  table, and the game's own high-score list (`-s` and `-s all`); it is text you can select and copy. Games that keep no
+  `xlogfile` show only the high-score list.
 - **Line drawing.** Walls drawn with `DECgraphics` are painted as real lines, whatever font you use.
 
 ## Games

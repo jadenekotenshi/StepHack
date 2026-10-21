@@ -1,6 +1,8 @@
 #import "GameSession.h"
 #import "GameConfig.h"
 #import "UIHelpers.h"
+#import "GameEnv.h"
+#import "Reaper.h"
 #include "keymap.h"
 #include <string.h>
 #include <stdlib.h>              /* posix_openpt/grantpt/unlockpt/ptsname on the host build */
@@ -15,7 +17,7 @@
  * header, not guessed): without it, WIFEXITED/WIFSIGNALED are defined against a `union wait`, not
  * a plain int, and WEXITSTATUS/WTERMSIG aren't declared at all. With it, everything is the
  * familiar plain-int POSIX form the rest of this file assumes (applied to a union wait's own
- * .w_status member -- see reap_pending() below -- since waitpid() itself turned out not to be a
+ * .w_status member -- see hk_reap_pending() below -- since waitpid() itself turned out not to be a
  * real, linkable symbol on this system at all: only wait3() is, which needs `union wait` and the
  * NeXT-native declarations _NEXT_SOURCE gates, a separate part of the same header, unconditional
  * on _POSIX_SOURCE's own state so both can be active together). Both defined only around this one
@@ -128,7 +130,7 @@ typedef struct reaped_child {
 } reaped_child;
 static reaped_child *reaped_list = NULL;
 
-static void reap_pending(void)
+void hk_reap_pending(void)
 {
     union wait wstatus;
     int pid;
@@ -146,10 +148,10 @@ static void reap_pending(void)
     }
 }
 
-static int reap_specific_child(int pid, int *status_out)
+int hk_reap_child(int pid, int *status_out)
 {
     reaped_child **pp;
-    reap_pending();
+    hk_reap_pending();
     for (pp = &reaped_list; *pp; pp = &(*pp)->next) {
         if ((*pp)->pid == pid) {
             reaped_child *found = *pp;
@@ -164,8 +166,8 @@ static int reap_specific_child(int pid, int *status_out)
 #else
 /* Host testing only: plain waitpid() works fine here (it is the OPENSTEP side that lacks it), and
  * can target a specific pid directly, so there is no shared-cache race to work around at all. */
-static void reap_pending(void) { }
-static int reap_specific_child(int pid, int *status_out)
+void hk_reap_pending(void) { }
+int hk_reap_child(int pid, int *status_out)
 {
     int w = waitpid(pid, status_out, WNOHANG);
     return w == pid;
@@ -266,24 +268,6 @@ static int reap_specific_child(int pid, int *status_out)
 /* ---------------------------------------------------------------- */
 /* starting the shell                                                */
 
-/* A malloc'd copy of a C string (OPENSTEP's libc has no strdup). */
-static char *copy_c(const char *s)
-{
-    size_t n = strlen(s) + 1;
-    char *p = (char *)malloc(n);
-    if (p) memcpy(p, s, n);
-    return p;
-}
-
-/* "NAME=value" for putting in an environment block. */
-static char *env_entry(const char *name, const char *value)
-{
-    size_t nl = strlen(name), vl = strlen(value);
-    char *p = (char *)malloc(nl + vl + 2);
-    if (p) { memcpy(p, name, nl); p[nl] = '='; memcpy(p + nl + 1, value, vl + 1); }
-    return p;
-}
-
 - (BOOL)startReportingTo:(NSString **)why
 {
     char slaveName[64];
@@ -295,8 +279,6 @@ static char *env_entry(const char *name, const char *value)
     NSFileManager *fm = [NSFileManager defaultManager];
     BOOL isDir = NO;
     char *launcherC, **env;
-    int envCount = 0, i, k = 0;
-    extern char **environ;
 
     if (![fm fileExistsAtPath:launcher isDirectory:&isDir] || isDir || ![fm isExecutableFileAtPath:launcher]) {
         if (why) *why = [NSString stringWithFormat:@"%s is not installed where Preferences says it is (%@). "
@@ -305,19 +287,9 @@ static char *env_entry(const char *name, const char *value)
     }
 
     /* Everything the child needs is prepared before fork(): no Objective-C after it. */
-    launcherC = copy_c(UI_CPATH(launcher));
-    while (environ[envCount]) envCount++;
-    env = (char **)malloc((size_t)(envCount + 4) * sizeof(char *));
+    launcherC = hk_copy_c(UI_CPATH(launcher));
+    env = hk_game_environ(UI_CPATH(hackdir));
     if (!launcherC || !env) { if (why) *why = @"Out of memory."; return NO; }
-    for (i = 0; i < envCount; i++) {
-        const char *e = environ[i];
-        if (strncmp(e, "TERM=", 5) == 0 || strncmp(e, "TERMCAP=", 8) == 0 || strncmp(e, "HACKDIR=", 8) == 0) continue;
-        env[k++] = environ[i];
-    }
-    env[k++] = env_entry("TERM", HK_TERM_NAME);
-    env[k++] = env_entry("TERMCAP", hk_termcap_entry());
-    env[k++] = env_entry("HACKDIR", UI_CPATH(hackdir));
-    env[k] = (char *)0;
 
     padMode = hk_pad_mode([GameConfig numberPadForGame:game]);
 
@@ -422,7 +394,10 @@ static char *env_entry(const char *name, const char *value)
         /* The game's own environment: TERM and TERMCAP describe the terminal this window really is (see
          * core/games.c), HACKDIR points at the data directory.  environ is replaced outright because OPENSTEP's
          * libc has no putenv(), and execl() passes on whatever environ holds. */
-        environ = env;
+        {
+            extern char **environ;
+            environ = env;
+        }
         execl(launcherC, launcherC, (char *)NULL);
         _exit(127);                                            /* exec failed */
     }
@@ -444,8 +419,8 @@ static char *env_entry(const char *name, const char *value)
 
     if (state != GS_RUNNING) return;
     [self flushPending];
-    reap_pending();                    /* opportunistic: keeps the shared cache fresh for whoever
-                                         * needs it (see reap_pending()'s own comment above) */
+    hk_reap_pending();                 /* opportunistic: keeps the shared cache fresh for whoever
+                                         * needs it (see hk_reap_pending()'s own comment above) */
     /* Take in what has arrived -- more than one read's worth if a flood is under way, while the tick's time budget lasts --
      * and redraw once afterwards (the view's frame cap decides when). A full buffer means there may be more waiting. */
     {
@@ -480,7 +455,7 @@ static char *env_entry(const char *name, const char *value)
     [timer invalidate];
     [timer release];
     timer = nil;
-    if (reap_specific_child(childPID, &status)) {
+    if (hk_reap_child(childPID, &status)) {
         exitStatus = WIFEXITED(status) ? WEXITSTATUS(status)
                    : WIFSIGNALED(status) ? 128 + WTERMSIG(status) : -1;
     }

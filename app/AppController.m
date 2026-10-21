@@ -1,6 +1,7 @@
 #import "AppController.h"
 #import "PrefsController.h"
 #import "OptionsController.h"
+#import "ScoresController.h"
 #import "UIHelpers.h"
 #include "keymap.h"
 
@@ -57,6 +58,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
     }
     [self addItem:@"New Game Again" action:@selector(newLastGame:) key:@"n" target:self toMenu:m];
     [self addItem:@"Options..." action:@selector(showOptions:) key:@"o" target:self toMenu:m];
+    [self addItem:@"Scores..." action:@selector(showScores:) key:@"s" target:self toMenu:m];
     [self addItem:@"Close Window" action:@selector(performClose:) key:@"w" target:nil toMenu:m];
 
     keypadMenu = [self submenuNamed:@"Keypad" inMenu:m];
@@ -179,6 +181,13 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
     GameSession *s = [self frontSession];
     const HkGameDef *g = s ? [s game] : hk_game(lastGame);
     if (g) [[OptionsController controllerForGame:g] showWindow];
+}
+
+- (void)showScores:(id)sender
+{
+    GameSession *s = [self frontSession];
+    const HkGameDef *g = s ? [s game] : hk_game(lastGame);
+    if (g) [[ScoresController controllerForGame:g] showWindow];
 }
 
 - (void)showPreferences:(id)sender
