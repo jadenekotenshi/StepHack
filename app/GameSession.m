@@ -281,7 +281,7 @@ int hk_reap_child(int pid, int *status_out)
 {
     NSView *bar = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, width, COMMAND_BAR_H)] autorelease];
     float x = 4.0;
-    int i;
+    int i, longest = 4;
     NSPopUpButton *more;
 
     [bar setAutoresizingMask:(NSViewWidthSizable | NSViewMaxYMargin)];
@@ -301,7 +301,13 @@ int hk_reap_child(int pid, int *status_out)
         [barControls addObject:b];
         x += w + 3.0;
     }
-    more = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(x + 4, 4, 70, 22) pullsDown:YES] autorelease];
+    /* The menu is as wide as the button, so the button is made wide enough for the longest entry. */
+    for (i = 0; i < hk_command_count(); i++) {
+        const HkCommand *c = hk_command(i);
+        if (hk_command_in(c, game) && !c->main && (int)strlen(c->label) > longest) longest = (int)strlen(c->label);
+    }
+    more = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(x + 4, 4, 40.0 + 7.0 * (float)longest, 22) pullsDown:YES]
+               autorelease];
     [more addItemWithTitle:@"More"];
     for (i = 0; i < hk_command_count(); i++) {
         const HkCommand *c = hk_command(i);
