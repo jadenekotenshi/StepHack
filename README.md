@@ -50,7 +50,7 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
   Every save first copies the file, gzipped, to `~/.StepHack/backups/<game>/sysconf.old.ddMMMyyyy.hhmm.gz`
   (`.../nethack/sysconf.old.22Oct2026.1435.gz`; a copy of the same minute is kept as it is), in your home directory because the
   game's own directory is usually not yours to write to. *Clean Up...* deletes backups more than N days old (30 unless you
-  change it; the date in the name decides, not the file time). It is compressed with the system's own `/usr/bin/gzip` (any newer gzip can unpack it); if that is missing the copy is left uncompressed.
+  change it; the date in the name decides, not the file time). It is compressed with the system's own `/usr/bin/gzip` (any newer gzip can unpack it), or `/usr/local/bin/gzip` if that is missing; with neither the copy is left uncompressed.
 - **Command bar.** A row of buttons under the game (Pray, Name, Call, Loot, Chat, Enhance, Overview, Attrib) and a *More*
   menu (Force, Untrap, Turn Undead, Offer, Sit, Ride, Wipe, Rub, Dip, Invoke, Jump, Monster, Adjust, Conduct, Discoveries,
   Look Here, Redraw) type the command for you. They send extended commands, which every version takes whatever the
