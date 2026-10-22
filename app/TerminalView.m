@@ -405,6 +405,7 @@ static unsigned cell_key(const vt_cell *c, int invert, int reverse_screen,
 
     /* Two passes over the row: every run's background, then every run's text.  A glyph may reach past its cell (a bold face's
      * stems do), and a neighbour's background drawn afterwards would cut it off. */
+    SSCrumb("TerminalView drawRow");
     for (pass = 0; pass < 2; pass++)
     for (c = c0; c < c1; ) {
         const vt_cell *cell = (cells && c < w) ? &cells[c] : &blank;
@@ -450,6 +451,7 @@ static unsigned cell_key(const vt_cell *c, int invert, int reverse_screen,
         if (anyText) {
             BOOL bold = ((key >> 18) & VT_BOLD) != 0;
             BOOL realBold = bold && boldFont && boldStyle == TV_BOLD_AUTO;
+            SSCrumb("TerminalView drawRow: text");
             [(realBold ? boldFont : font) set];
             [fg set];
             PSmoveto(x, y + baseline);
@@ -460,6 +462,7 @@ static unsigned cell_key(const vt_cell *c, int invert, int reverse_screen,
             }
         }
         if (anyShape) {
+            SSCrumb("TerminalView drawRow: line-drawing shapes");
             for (i = 0; i < n; i++) {
                 const vt_cell *cl = (cells && c + i < w) ? &cells[c + i] : &blank;
                 if (vt_box_arms(cl->ch) || vt_block_kind(cl->ch))
@@ -482,6 +485,7 @@ static unsigned cell_key(const vt_cell *c, int invert, int reverse_screen,
     BOOL live = (scrollBack == 0 && term->cursor_visible);
     NSRect b = [self bounds];
 
+    SSCrumb("TerminalView drawRect");
     [defaultBg set];
     NSRectFill(rect);
 

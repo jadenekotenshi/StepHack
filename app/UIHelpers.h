@@ -20,4 +20,8 @@ NSData   *ui_utf8_cstring(NSString *s);              /* bytes of s in UTF-8 plus
  * application's stderr, so this is how to see how far a launch from Workspace got. */
 void SSTrace(const char *fmt, ...);
 void SSTraceV(NSString *path, const char *fmt, va_list ap);   /* same, for any path (used by the tests) */
+/* Where the program has got to, for a crash report: SSCrumb("drawing a row") remembers the text (a string constant) in a
+ * global that main.m's fatal-signal handler writes to the trace.  Costs one store. */
+extern const char *volatile ss_crumb;
+#define SSCrumb(text) (ss_crumb = (text))
 #define SSCS(s) ((s) != nil ? [(s) cString] : "(nil)")      /* an NSString as a C string, nil-safe */

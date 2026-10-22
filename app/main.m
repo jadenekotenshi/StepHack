@@ -26,7 +26,9 @@ static void fatal_signal(int sig)
     if (traceFD >= 0) {
         write(traceFD, "FATAL: ", 7);
         write(traceFD, name, strlen(name));
-        write(traceFD, " (the process dies)\n", 20);
+        write(traceFD, " (the process dies); last step: ", 33);
+        write(traceFD, (const char *)ss_crumb, strlen((const char *)ss_crumb));
+        write(traceFD, "\n", 1);
     }
     signal(sig, SIG_DFL);
     kill(getpid(), sig);
@@ -39,10 +41,20 @@ static void leaving(void)
 
 int main(int argc, char *argv[])
 {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    NSAutoreleasePool *pool;
     AppController *controller;
     int i;
 
+    /* Descriptors 0, 1 and 2 must be open: a program started by Workspace may have none of them, and then the first files it
+     * opens (the pseudo-terminal, a log) would become its "standard output" and "standard error", and Foundation's own
+     * messages would be written into the pty.  Whichever are closed are pointed at /dev/null. */
+    {
+        int fd;
+        for (fd = 0; fd < 3; fd++)
+            if (fcntl(fd, F_GETFD, 0) < 0) (void)open("/dev/null", O_RDWR);
+    }
+    pool = [[NSAutoreleasePool alloc] init];
+    SSCrumb("starting up");
     NSLog(@"StepHack: starting");
     SSTrace("---- starting, argc=%d", argc);
     for (i = 0; i < argc; i++) SSTrace("  argv[%d] = %s", i, argv[i]);

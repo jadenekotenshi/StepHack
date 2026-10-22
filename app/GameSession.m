@@ -409,6 +409,7 @@ int hk_reap_child(int pid, int *status_out)
     SSTrace("%s: window built", game->id);
 
     masterFD = open_master_pty(slaveName);
+    SSTrace("%s: pty master is descriptor %d", game->id, masterFD);
     if (masterFD < 0) {
         if (why) *why = @"Could not open a pty (no free device).";
         [window close];
@@ -544,6 +545,7 @@ int hk_reap_child(int pid, int *status_out)
 
     if (state == GS_CLOSING) { [self closingTick]; return; }
     if (state != GS_RUNNING) return;
+    SSCrumb("GameSession tick: writing pending input");
     [self flushPending];
     hk_reap_pending();                 /* opportunistic: keeps the shared cache fresh for whoever
                                          * needs it (see hk_reap_pending()'s own comment above) */
@@ -554,8 +556,10 @@ int hk_reap_child(int pid, int *status_out)
         int reads = 0;
 
         do {
+            SSCrumb("GameSession tick: reading the pty");
             n = read(masterFD, buf, sizeof(buf));
             if (n > 0) {
+                SSCrumb("GameSession tick: feeding the terminal");
                 if (rawLog) { fwrite(buf, 1, (size_t)n, (FILE *)rawLog); fflush((FILE *)rawLog); }
                 [termView writeBytes:buf length:n];
                 reads++;

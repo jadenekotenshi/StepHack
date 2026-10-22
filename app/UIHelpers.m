@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+const char *volatile ss_crumb = "(before the first step)";
+
 void SSTraceV(NSString *path, const char *fmt, va_list ap)
 {
     static NSTimeInterval first = 0.0;
