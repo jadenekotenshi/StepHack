@@ -210,10 +210,10 @@ static void test_rc_robust(void)
 
 static void test_schema(void)
 {
-    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack", "unnethack", "evilhack", "splicehack" };
+    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack", "unnethack", "evilhack", "splicehack", "nethack343" };
     int g, i, j;
 
-    for (g = 0; g < 7; g++) {
+    for (g = 0; g < 8; g++) {
         char *text = hks_builtin(ids[g]);
         HkSchema *s;
         int groups = 0, opts = 0;
@@ -241,7 +241,7 @@ static void test_schema(void)
             }
         }
         CHECK(groups >= 4 && opts >= 40);
-        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0 || strcmp(ids[g], "unnethack") == 0 || strcmp(ids[g], "evilhack") == 0 || strcmp(ids[g], "splicehack") == 0));
+        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0 || strcmp(ids[g], "unnethack") == 0 || strcmp(ids[g], "evilhack") == 0 || strcmp(ids[g], "splicehack") == 0 || strcmp(ids[g], "nethack343") == 0));
         hks_free(s);
     }
     CHECK(hks_builtin("nosuch") == NULL);
@@ -602,6 +602,11 @@ static void test_games(void)
         sp = hk_game_by_id("evilhack");
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/evilhack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/evilhackdir") == 0);
         CHECK(strcmp(sp->rcname, ".evilhackrc") == 0 && sp->curses == HK_CURSES_SYMSET && strcmp(sp->term, "xterm") == 0 && !sp->verified);
+        sp = hk_game_by_id("nethack343");
+        CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/nethack343") == 0 && strcmp(sp->hackdir, "/usr/local/lib/nethack343dir") == 0);
+        CHECK(strcmp(sp->rcname, ".nethack343rc") == 0 && sp->rc_env != NULL && strcmp(sp->rc_env, "NETHACKOPTIONS") == 0);
+        CHECK(sp->curses == HK_CURSES_GFX && sp->curses_default && strcmp(sp->term, "xterm") == 0 && sp->sysconf == NULL && !sp->verified);
+        CHECK(hk_game_by_id("nethack")->rc_env == NULL && hk_game_by_id("sporkhack")->rc_env == NULL);
         sp = hk_game_by_id("splicehack");
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/splicehack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/splicehackdir") == 0);
         CHECK(strcmp(sp->rcname, ".splicehackrc") == 0 && sp->curses == HK_CURSES_SYMSET && (sp->family & HK_FAMILY_50) && !sp->verified);

@@ -402,7 +402,10 @@ int hk_reap_child(int pid, int *status_out)
     argv[0] = launcherC;
     argv[1] = hk_mode_arg(playMode) ? hk_copy_c(hk_mode_arg(playMode)) : (char *)0;     /* -D or -X; the launcher passes it on */
     argv[2] = (char *)0;
-    env = hk_game_environ(UI_CPATH(hackdir), term ? UI_CPATH(term) : NULL);
+    /* A game that reads its options file's name from the environment (3.4.3's NETHACKOPTIONS=/path) is given its own file, so that
+     * it does not share ~/.nethackrc with versions whose options it does not understand. */
+    env = hk_game_environ_with(UI_CPATH(hackdir), term ? UI_CPATH(term) : NULL, game->rc_env,
+                               game->rc_env ? UI_CPATH([GameConfig rcPathForGame:game]) : NULL);
     if (!launcherC || !env) { if (why) *why = @"Out of memory."; return NO; }
 
     [self buildWindow];

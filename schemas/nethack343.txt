@@ -1,0 +1,73 @@
+game	nethack343	NetHack 3.4.3	explicit	
+group	Movement and keys			
+enum	number_pad	0	Movement keys	0=Letter keys (h j k l y u b n)|1=Number pad|2=Number pad, 5 acts like i|-1=Letter keys, y and z swapped
+bool	travel	1	The _ travel command is available	
+enum	runmode	run	How running is shown	teleport=Jump to the end|run=Fast|walk=Step by step|crawl=Slowly
+bool	autoopen	1	Open doors by walking into them	
+bool	autodig	0	Dig when moving into rock while wielding a digging tool	
+bool	rest_on_space	0	Space bar rests	
+bool	cmdassist	1	Help when a command is used wrongly	
+bool	extmenu	0	Menu for extended (#) commands	
+bool	ignintr	0	Ignore the interrupt key	
+group	Display			
+enum	windowtype		Interface	=StepHack's choice (curses)|tty=Plain terminal (tty)|curses=Curses
+bool	DECgraphics	0	Draw walls with line graphics (the plain terminal interface)	
+bool	cursesgraphics	0	Line graphics for the curses interface	
+bool	guicolor	1	Colour the interface itself (curses)	
+bool	mouse_support	0	Use the mouse (curses)	
+bool	popup_dialog	0	Show prompts in pop-up windows (curses)	
+bool	color	1	Use colour	
+bool	hilite_pet	0	Highlight your pet	
+bool	lit_corridor	0	Show lit corridor squares differently	
+bool	use_inverse	0	Show detected monsters in inverse	
+bool	standout	0	Use standout (bold) for --More--	
+bool	sparkle	1	Show sparkling effects when monsters resist	
+bool	splash_screen	1	Show the splash screen at the start	
+bool	tombstone	1	Show a tombstone when you die	
+bool	timed_delay	1	Pause for animations	
+bool	eight_bit_tty	0	Pass 8-bit characters to the terminal	
+group	Status line			
+bool	time	0	Show the turn counter	
+bool	showexp	0	Show experience points	
+bool	showscore	0	Show the score	
+bool	showrace	0	Show your race instead of your role in the status line	
+group	Messages and menus			
+enum	msg_window	single	Message history window	single=One message|combination=Combination|full=Full|reversed=Newest first
+enum	menustyle	full	Menu style	traditional=Traditional|combination=Combination|full=Full menus|partial=Partial
+int	msghistory	20	Messages kept in the history	0..1000
+bool	verbose	1	More detailed messages	
+bool	confirm	1	Confirm before attacking peaceful monsters	
+bool	news	1	Show the news file at the start	
+bool	mail	1	Deliver mail	
+bool	silent	1	No bell	
+bool	help	1	Offer help on ?	
+group	Pickup and inventory			
+bool	autopickup	1	Pick up objects when walking over them	
+text	pickup_types		Kinds of objects to pick up, such as $?!/="+ (empty: all)	
+enum	pickup_burden	stressed	Ask before pickup makes you	unencumbered=Unencumbered|burdened=Burdened|stressed=Stressed|strained=Strained|overtaxed=Overtaxed|overloaded=Overloaded
+bool	pickup_thrown	0	Pick up what you threw	
+bool	autoquiver	0	Fill the quiver automatically	
+bool	pushweapon	0	Keep the old weapon as the alternate when wielding another	
+bool	fixinv	1	Keep inventory letters fixed	
+bool	lootabc	0	Use a, b, c in the loot menu	
+bool	sortpack	1	Sort inventory by kind	
+text	packorder		Order of kinds of objects in your pack	
+bool	perm_invent	0	Keep the inventory visible	
+group	Pets and names			
+enum	pettype		Starting pet	=Random|cat|dog|horse|none
+text	catname		Name of your kitten	
+text	dogname		Name of your little dog	
+text	horsename		Name of your pony	
+text	fruit		Name of your favourite fruit	
+bool	safe_pet	1	Do not hit your pet by walking into it	
+group	Game			
+bool	checkpoint	1	Save a checkpoint at each level change	
+text	disclose		What to reveal when the game ends	
+text	scores		Which scores to list at the end	
+text	suppress_alert		Hide alerts about features added in a version (such as 3.4.3)	
+group	Character (used when a new game starts)			
+text	name		Your name	
+enum	role		Role	=Ask|Archeologist|Barbarian|Caveman|Healer|Knight|Monk|Priest|Rogue|Ranger|Samurai|Tourist|Valkyrie|Wizard
+enum	race		Race	=Ask|human|elf|dwarf|gnome|orc
+enum	gender		Gender	=Ask|male|female
+enum	align		Alignment	=Ask|lawful|neutral|chaotic

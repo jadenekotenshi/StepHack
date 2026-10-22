@@ -24,15 +24,21 @@ static char *env_entry(const char *name, const char *value)
 
 char **hk_game_environ(const char *hackdir, const char *term)
 {
+    return hk_game_environ_with(hackdir, term, NULL, NULL);
+}
+
+char **hk_game_environ_with(const char *hackdir, const char *term, const char *name, const char *value)
+{
     int count = 0, i, k = 0;
     char **env;
 
     while (environ[count]) count++;
-    env = (char **)malloc((size_t)(count + 4) * sizeof(char *));
+    env = (char **)malloc((size_t)(count + 5) * sizeof(char *));
     if (!env) return NULL;
     for (i = 0; i < count; i++) {
         const char *e = environ[i];
         if (strncmp(e, "TERM=", 5) == 0 || strncmp(e, "TERMCAP=", 8) == 0 || strncmp(e, "HACKDIR=", 8) == 0) continue;
+        if (name && strncmp(e, name, strlen(name)) == 0 && e[strlen(name)] == '=') continue;
         env[k++] = environ[i];
     }
     if (term) {
@@ -42,6 +48,7 @@ char **hk_game_environ(const char *hackdir, const char *term)
         env[k++] = env_entry("TERMCAP", hk_termcap_entry());
     }
     env[k++] = env_entry("HACKDIR", hackdir);
+    if (name && value) env[k++] = env_entry(name, value);
     env[k] = (char *)0;
     return env;
 }

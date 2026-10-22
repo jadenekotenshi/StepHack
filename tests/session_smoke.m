@@ -236,6 +236,38 @@ int main(void)
         }
     }
 
+    /* a game that takes the name of its options file from the environment (3.4.3) is given its own file */
+    {
+        const HkGameDef *g343 = hk_game_by_id("nethack343");
+        NSString *l343 = [dir stringByAppendingPathComponent:@"game343"], *out343 = [dir stringByAppendingPathComponent:@"opts343"];
+        NSString *rc343 = [dir stringByAppendingPathComponent:@"my343rc"], *got343;
+        Owner *o6 = [[[Owner alloc] init] autorelease];
+        GameSession *s6;
+        [[NSString stringWithFormat:@"#!/bin/sh\necho \"[$NETHACKOPTIONS]\" > %@\nexec cat\n", out343] writeToFile:l343 atomically:YES];
+        chmod([l343 fileSystemRepresentation], 0755);
+        [fm removeFileAtPath:out343 handler:nil];
+        [GameConfig setPath:l343 forKey:@"launcher" game:g343];
+        [GameConfig setPath:rc343 forKey:@"rc" game:g343];
+        s6 = [[GameSession alloc] initWithGame:g343 owner:o6];
+        CHECK([s6 startReportingTo:&why]);
+        for (i = 0; i < 100 && ![fm fileExistsAtPath:out343]; i++) spin(0.05);
+        got343 = [NSString stringWithContentsOfFile:out343];
+        {
+            NSString *want343 = [NSString stringWithFormat:@"[%@]\n", rc343];
+            CHECK(got343 != nil && [got343 isEqualToString:want343]);             /* the file, not option text */
+        }
+        CHECK([fm fileExistsAtPath:rc343]);                                       /* StepHack's defaults went into it */
+        got343 = [NSString stringWithContentsOfFile:rc343];
+        CHECK([got343 rangeOfString:@"windowtype:curses"].length > 0 && [got343 rangeOfString:@"cursesgraphics"].length > 0);
+        CHECK([got343 rangeOfString:@"symset"].length == 0);                      /* nothing from the 3.6 line */
+        [s6 abandon];
+        [[s6 window] close];
+        [s6 release];
+        [GameConfig setPath:@"" forKey:@"launcher" game:g343];
+        [GameConfig setPath:@"" forKey:@"rc" game:g343];
+        CHECK([[GameConfig rcPathForGame:g343] hasSuffix:@"/.nethack343rc"]);     /* its own default name */
+    }
+
     /* closing the window of a game in progress hangs it up (the game saves) and waits for it; abandoning kills it */
     {
         NSString *hup = [dir stringByAppendingPathComponent:@"hupgame"], *saved = [dir stringByAppendingPathComponent:@"saved"];

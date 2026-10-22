@@ -77,12 +77,13 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 | NetHack 5.0 | `/usr/local/bin/nethack5` | `/usr/local/lib/nethack5dir` | `~/.nethackrc` |
 | EvilHack 0.9.3 (untested) | `/usr/local/bin/evilhack` | `/usr/local/lib/evilhackdir` | `~/.evilhackrc` |
 | SpliceHack 1.2.0 (untested) | `/usr/local/bin/splicehack` | `/usr/local/lib/splicehackdir` | `~/.splicehackrc` |
+| NetHack 3.4.3 (untested) | `/usr/local/bin/nethack343` | `/usr/local/lib/nethack343dir` | `~/.nethack343rc` (see below) |
 | UnNetHack 6.0.17 (untested) | `/usr/local/bin/unnethack` | `/usr/local/share/unnethack` | `~/.unnethackrc` (`~/.nethackrc` while that is absent; a new one starts from the game's `unnethackrc.default`) |
 | SporkHack 0.6.5 | `/usr/local/bin/sporkhack` | `/usr/local/lib/sporkhackdir` | `~/.sporkrc` (`~/.nethackrc` while that is absent) |
 
 These are where the [openstep-pkg](https://github.com/jadenekotenshi/openstep-pkg) packages install them. All three
 locations can be changed in *Preferences*. More variants
-(NetHack 3.4.3) is planned. SporkHack, UnNetHack, EvilHack and SpliceHack are built on ncurses, so they are run under the
+SporkHack, UnNetHack, EvilHack, SpliceHack and the 3.4.3 package are built on ncurses, so they are run under the
 stock `xterm` terminal description instead of StepHack's own termcap entry; *Preferences* has a *Terminal* field to change
 that for any game (`stephack` selects StepHack's own entry).
 
@@ -99,6 +100,11 @@ loop only survived because the main pool is never drained.
 If a game draws wrongly, `touch ~/.StepHack.pty` and start the game: everything it writes is also saved, untouched, in
 `~/.StepHack.ptylog` (started afresh for each game; the first line says which `TERM` it ran under). Delete the flag file
 to stop. `touch ~/.StepHack.trace` additionally logs key events, as in the other apps.
+
+NetHack 3.4.3's package builds the curses interface (a patched game that starts in curses; `OPTIONS=windowtype:tty` gives the plain
+one) and installs the game as `nethack343`. It reads `~/.nethackrc`, the same file as NetHack 3.6.7 and 5.0, and the three do not
+understand each other's options (3.4.3 has `cursesgraphics`, the later ones `symset`), so StepHack runs it with
+`NETHACKOPTIONS=<home>/.nethack343rc`, which 3.4.3 takes as the name of its options file, and edits that file instead.
 
 ## Building
 

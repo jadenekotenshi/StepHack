@@ -33,6 +33,7 @@ typedef struct {
     int         curses_default; /* 1: run it with curses unless told otherwise (its package is built with that interface) */
     const char *term;           /* TERM for a game built on ncurses/terminfo, which cannot use the stephack termcap entry; NULL: use it */
     const char *sysconf;        /* the system configuration file in the data directory ("sysconf"), or NULL if the game has none */
+    const char *rc_env;         /* an environment variable the game reads the NAME of its options file from (3.4.3: NETHACKOPTIONS=/path), or NULL; set to the options file path so that the game has a file of its own */
 } HkGameDef;
 
 /* How a game is started: normally, in wizard (debug) mode, or in explore (non-scoring) mode.  The mode is the game's -D or -X. */

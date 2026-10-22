@@ -12,5 +12,7 @@ char *hk_copy_c(const char *s);
  * core/games.c) when term is NULL, or, for a game that reads terminfo through ncurses and cannot use that, term as TERM
  * and no TERMCAP. */
 char **hk_game_environ(const char *hackdir, const char *term);
+/* The same, and one more variable set (NAME=value; a NAME already in the environment is replaced); name may be NULL. */
+char **hk_game_environ_with(const char *hackdir, const char *term, const char *name, const char *value);
 
 #endif
