@@ -76,7 +76,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     }
     if (found == 0) [self addItem:@"No games found" action:NULL key:@"" target:nil toMenu:menu];
     if (mode == HK_MODE_NORMAL) [self addItem:@"Look for Games Again" action:@selector(rescanGames:) key:@"" target:self toMenu:menu];
-    if ([menu respondsToSelector:@selector(sizeToFit)]) [menu sizeToFit];
+    if (launched && [menu respondsToSelector:@selector(sizeToFit)]) [menu sizeToFit];
 }
 
 /* The New Game menus list the games found on this machine, and (the first) a way to look again. */
@@ -119,11 +119,12 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     NSMenu *main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
     NSMenu *m;
 
+    SSTrace("buildMenu: start");
     m = [self submenuNamed:@"Game" inMenu:main];
     gamesMenu = [self submenuNamed:@"New Game" inMenu:m];
     wizardMenu = [self submenuNamed:@"New Wizard Mode Game" inMenu:m];
     exploreMenu = [self submenuNamed:@"New Explore Mode Game" inMenu:m];
-    [self rebuildGamesMenu];
+    SSTrace("buildMenu: the game submenus exist (they are filled once the application is running)");
     [self addItem:@"New Game Again" action:@selector(newLastGame:) key:@"n" target:self toMenu:m];
     [self addItem:@"Options..." action:@selector(showOptions:) key:@"o" target:self toMenu:m];
     [[self addItem:@"System Settings..." action:@selector(showSysconf:) key:@"" target:self toMenu:m] setTag:TAG_SYSCONF];
@@ -141,6 +142,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     [[self addItem:@"Letter keys, y and z swapped" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
         setTag:TAG_PAD_QWERTZ];
 
+    SSTrace("buildMenu: Game menu done");
     m = [self submenuNamed:@"Edit" inMenu:main];
     [self addItem:@"Copy" action:@selector(copy:) key:@"c" target:nil toMenu:m];
     [self addItem:@"Paste" action:@selector(paste:) key:@"v" target:nil toMenu:m];
@@ -160,7 +162,9 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     [self addItem:@"Hide" action:@selector(hide:) key:@"h" target:NSApp toMenu:main];
     [self addItem:@"Quit" action:@selector(terminate:) key:@"q" target:NSApp toMenu:main];
 
+    SSTrace("buildMenu: setting the main menu");
     [NSApp setMainMenu:main];
+    SSTrace("buildMenu: done");
 }
 
 /* The frontmost game window's session, or nil. */
@@ -177,6 +181,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 - (BOOL)validateMenuItem:(id)item
 {
     int tag = [item tag];
+    if (!launched) return tag < TAG_PAD_LETTERS || tag > TAG_SYSCONF ? YES : NO;      /* (nothing is looked up before the application runs) */
     if (tag == TAG_SYSCONF) {                                  /* only for a game that has a sysconf file */
         GameSession *fs = [self frontSession];
         const HkGameDef *fg = fs ? [fs game] : hk_game(lastGame);
@@ -203,6 +208,9 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 {
     int first = [self defaultGameIndex];
     NSLog(@"StepHack: applicationDidFinishLaunching");
+    launched = YES;
+    SSTrace("applicationDidFinishLaunching: filling the game menus");
+    [self rebuildGamesMenu];
     SSTrace("applicationDidFinishLaunching: first game index %d (last played: %s)", first,
             [GameConfig lastGameId] ? UI_CPATH([GameConfig lastGameId]) : "(none)");
     if (first < 0) {
@@ -221,7 +229,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 /* Coming back to the application is when a package may have been installed meanwhile. */
 - (void)applicationDidBecomeActive:(NSNotification *)notification
 {
-    [self rebuildGamesMenu];
+    if (launched) [self rebuildGamesMenu];
 }
 
 /* ---------------------------------------------------------------- */

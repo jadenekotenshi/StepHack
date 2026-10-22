@@ -8,6 +8,7 @@
     int             lastGame;          /* index into the game table of the last one started */
     NSMenu         *keypadMenu;
     NSMenu         *wizardMenu, *exploreMenu;   /* the same games, started in wizard or explore mode */
+    BOOL            launched;          /* the application is running: until then no menu item looks at the disk or the preferences */
     NSMenu         *gamesMenu;         /* the New Game submenu: only the games that are installed */
 }
 - (void)buildMenu;
