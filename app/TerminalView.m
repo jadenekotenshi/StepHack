@@ -1,5 +1,6 @@
 #import "TerminalView.h"
 #include <stdlib.h>
+#include "colours.h"
 #import "UIHelpers.h"
 #include "nsenc.h"
 #include <string.h>
@@ -248,11 +249,13 @@ static int iceil(float x)  { int i = (int)x; return (x > (float)i) ? i + 1 : i; 
 
 - (void)setForeground:(NSColor *)fg background:(NSColor *)bg
 {
+    int i;
     [fg retain]; [bg retain];
     [defaultFg release];
     [defaultBg release];
     defaultFg = fg;
     defaultBg = bg;
+    for (i = 0; i < 256; i++) { [palette[i] release]; palette[i] = nil; }     /* adjusted for the old background */
     [self setNeedsDisplay:YES];
 }
 - (void)setPasteAnswer:(int)answer { pasteAnswer = answer; }
@@ -288,9 +291,13 @@ static int iceil(float x)  { int i = (int)x; return (x > (float)i) ? i + 1 : i; 
     if (code == CODE_DEFFG) return defaultFg;
     if (code == CODE_DEFBG) return defaultBg;
     if (!palette[code]) {
+        double dr, dg, db, bgLum = 1.0;
+        NSColor *bg = [defaultBg colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
         vt_palette_rgb(code, &r, &g, &b);
-        palette[code] = [[NSColor colorWithCalibratedRed:r / 255.0 green:g / 255.0
-                                                    blue:b / 255.0 alpha:1.0] retain];
+        dr = r / 255.0; dg = g / 255.0; db = b / 255.0;
+        if (bg) bgLum = hk_luminance([bg redComponent], [bg greenComponent], [bg blueComponent]);
+        hk_adjust_for_background(&dr, &dg, &db, bgLum);                 /* legible on this background */
+        palette[code] = [[NSColor colorWithCalibratedRed:dr green:dg blue:db alpha:1.0] retain];
     }
     return palette[code];
 }

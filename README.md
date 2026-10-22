@@ -29,6 +29,8 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
   `xlogfile` show only the high-score list.
 - **Colours.** *Preferences > Colours* switches the terminal between black on white (as OPENSTEP's own applications) and
   white on black (what the games are written for: much of what they show is yellow). Open windows follow at once.
+  Whichever you pick, colours are nudged to stay legible on it (`core/colours.c`): yellow, cyan and white are darkened on a
+  light background, blue and black lightened on a dark one, keeping their hue.
 - **Command bar.** A row of buttons under the game (Pray, Name, Call, Loot, Chat, Enhance, Overview, Attrib) and a *More*
   menu (Force, Untrap, Turn Undead, Offer, Sit, Ride, Wipe, Rub, Dip, Invoke, Jump, Monster, Adjust, Conduct, Discoveries,
   Look Here, Redraw) type the command for you. They send extended commands, which every version takes whatever the
