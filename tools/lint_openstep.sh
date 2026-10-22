@@ -46,6 +46,13 @@ for f in term/*.c core/*.c app/*.m; do
     grep -q "$o" Makefile.openstep || { echo "LINT: $f is not listed in Makefile.openstep (it would fail to link)"; status=1; }
 done
 
+# --- the first rule in Makefile.openstep is the default goal: it has to be "all" ---
+first=$(grep -E '^[A-Za-z$(][^=#]*:' Makefile.openstep | head -1)
+case "$first" in
+all:*) ;;
+*) echo "LINT: the first rule in Makefile.openstep is '$first', not 'all:' (a plain make would build that instead of the app)"; status=1;;
+esac
+
 # --- every header must be in the hand-written HEADERS list (or edits to it would not rebuild what includes it) ---
 for h in term/*.h core/*.h app/*.h; do
     grep -q "$h" Makefile.openstep || { echo "LINT: $h is not listed in HEADERS in Makefile.openstep"; status=1; }

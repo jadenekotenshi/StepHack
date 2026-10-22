@@ -45,8 +45,6 @@ HEADERS   = term/nsenc.h term/nsenc_tab.h term/vt.h \
             app/AppController.h app/Compat.h app/EndingStore.h app/EndingsController.h app/GameConfig.h app/GameEnv.h \
             app/GameSession.h app/OptionsController.h app/PrefsController.h app/ProcessRunner.h app/Reaper.h \
             app/ScoresController.h app/TerminalView.h app/UIHelpers.h app/oscompat.h
-$(TERM_OBJS) $(CORE_OBJS) $(APP_OBJS): $(HEADERS)
-
 .SUFFIXES: .c .m .o
 
 .c.o:
@@ -56,6 +54,9 @@ $(TERM_OBJS) $(CORE_OBJS) $(APP_OBJS): $(HEADERS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 all: $(APP)/StepHack
+
+# (After "all", which has to be the first rule so that a plain "make" builds the application.)
+$(TERM_OBJS) $(CORE_OBJS) $(APP_OBJS): $(HEADERS)
 
 $(APP)/StepHack: $(TERM_OBJS) $(CORE_OBJS) $(APP_OBJS) $(ICONHDR) $(ICONTIFF)
 	-mkdir $(APP)
