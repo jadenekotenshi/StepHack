@@ -125,8 +125,17 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
  * make it give up; the real menus are built in applicationDidFinishLaunching. */
 - (void)buildMenu
 {
-    NSMenu *main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
-    id item = [main addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"];
+    NSMenu *main;
+    id item;
+
+    if ([[NSUserDefaults standardUserDefaults] integerForKey:@"MenuPreRun"] == 1) {      /* a test: the way StepTTY does it */
+        SSTrace("buildMenu: the real menu, before the event loop");
+        [self buildFullMenu];
+        menusBuilt = YES;
+        return;
+    }
+    main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
+    item = [main addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"];
     [item setTarget:NSApp];
     SSTrace("buildMenu: minimal menu");
     [NSApp setMainMenu:main];
@@ -262,8 +271,10 @@ enum { MP_GAME = 1, MP_EDIT = 2, MP_PREFS = 4, MP_WINDOWS = 8, MP_HIDE = 16, MP_
     int first;
     NSLog(@"StepHack: applicationDidFinishLaunching");
     launched = YES;
-    SSTrace("applicationDidFinishLaunching: building the menus");
-    [self buildFullMenu];
+    if (!menusBuilt) {
+        SSTrace("applicationDidFinishLaunching: building the menus");
+        [self buildFullMenu];
+    }
     first = [self defaultGameIndex];
     [self addModeMenus];
     SSTrace("applicationDidFinishLaunching: filling the game menus");
@@ -279,6 +290,11 @@ enum { MP_GAME = 1, MP_EDIT = 2, MP_PREFS = 4, MP_WINDOWS = 8, MP_HIDE = 16, MP_
         return;
     }
     lastGame = first;
+    if ([[NSUserDefaults standardUserDefaults] objectForKey:@"AutoStart"] != nil &&
+        [[NSUserDefaults standardUserDefaults] integerForKey:@"AutoStart"] == 0) {         /* a test: no game window at launch */
+        SSTrace("AutoStart is 0: no game started");
+        return;
+    }
     [self startGameIndex:first];
     SSTrace("start-up finished with %u game window(s)", (unsigned)[sessions count]);
 }
