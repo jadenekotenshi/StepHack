@@ -207,10 +207,10 @@ static void test_rc_robust(void)
 
 static void test_schema(void)
 {
-    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack", "unnethack" };
+    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack", "unnethack", "evilhack", "splicehack" };
     int g, i, j;
 
-    for (g = 0; g < 5; g++) {
+    for (g = 0; g < 7; g++) {
         char *text = hks_builtin(ids[g]);
         HkSchema *s;
         int groups = 0, opts = 0;
@@ -238,7 +238,7 @@ static void test_schema(void)
             }
         }
         CHECK(groups >= 4 && opts >= 40);
-        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0 || strcmp(ids[g], "unnethack") == 0));
+        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0 || strcmp(ids[g], "unnethack") == 0 || strcmp(ids[g], "evilhack") == 0 || strcmp(ids[g], "splicehack") == 0));
         hks_free(s);
     }
     CHECK(hks_builtin("nosuch") == NULL);
@@ -406,6 +406,12 @@ static void test_games(void)
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/unnethack") == 0 && strcmp(sp->hackdir, "/usr/local/share/unnethack") == 0);
         CHECK(strcmp(sp->rcname, ".unnethackrc") == 0 && strcmp(sp->rcdefault, "unnethackrc.default") == 0 && !sp->verified);
         CHECK((sp->family & HK_FAMILY_34) && (sp->family & HK_FAMILY_36));
+        sp = hk_game_by_id("evilhack");
+        CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/evilhack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/evilhackdir") == 0);
+        CHECK(strcmp(sp->rcname, ".evilhackrc") == 0 && sp->curses == HK_CURSES_SYMSET && strcmp(sp->term, "xterm") == 0 && !sp->verified);
+        sp = hk_game_by_id("splicehack");
+        CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/splicehack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/splicehackdir") == 0);
+        CHECK(strcmp(sp->rcname, ".splicehackrc") == 0 && sp->curses == HK_CURSES_SYMSET && (sp->family & HK_FAMILY_50) && !sp->verified);
     }
     CHECK(strcmp(hk_game_by_id("nethack")->line_option, "DECgraphics") == 0 && strcmp(hk_game_by_id("slashem")->line_option, "DECgraphics") == 0);
     /* the termcap entry must fit a classic environment variable and be well formed */

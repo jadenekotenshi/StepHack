@@ -47,12 +47,14 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 | NetHack 3.6.7 | `/usr/local/bin/nethack` | `/usr/local/lib/nethackdir` | `~/.nethackrc` |
 | Slash'EM 0.0.7E7F3 | `/usr/local/bin/slashem` | `/usr/local/slashemdir` | `~/.slashemrc` |
 | NetHack 5.0 | `/usr/local/bin/nethack5` | `/usr/local/lib/nethack5dir` | `~/.nethackrc` |
+| EvilHack 0.9.3 (untested) | `/usr/local/bin/evilhack` | `/usr/local/lib/evilhackdir` | `~/.evilhackrc` |
+| SpliceHack 1.2.0 (untested) | `/usr/local/bin/splicehack` | `/usr/local/lib/splicehackdir` | `~/.splicehackrc` |
 | UnNetHack 6.0.17 (untested) | `/usr/local/bin/unnethack` | `/usr/local/share/unnethack` | `~/.unnethackrc` (`~/.nethackrc` while that is absent; a new one starts from the game's `unnethackrc.default`) |
 | SporkHack 0.6.5 | `/usr/local/bin/sporkhack` | `/usr/local/lib/sporkhackdir` | `~/.sporkrc` (`~/.nethackrc` while that is absent) |
 
 These are where the [openstep-pkg](https://github.com/jadenekotenshi/openstep-pkg) packages install them. All three
 locations can be changed in *Preferences*. More variants
-(NetHack 3.4.3, EvilHack, SpliceHack) are planned. SporkHack and UnNetHack are built on ncurses, so they are run under the
+(NetHack 3.4.3) is planned. SporkHack, UnNetHack, EvilHack and SpliceHack are built on ncurses, so they are run under the
 stock `xterm` terminal description instead of StepHack's own termcap entry; *Preferences* has a *Terminal* field to change
 that for any game (`stephack` selects StepHack's own entry).
 

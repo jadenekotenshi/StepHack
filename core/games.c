@@ -6,7 +6,9 @@ static const HkGameDef GAMES[] = {
     { "slashem",   "Slash'EM 0.0.7",  "/usr/local/bin/slashem",   "/usr/local/slashemdir",       ".slashemrc",   NULL,         NULL,                  "slashem",    "DECgraphics", 1, HK_FAMILY_34, HK_CURSES_NONE, 0, NULL },
     { "nethack5",  "NetHack 5.0",     "/usr/local/bin/nethack5",  "/usr/local/lib/nethack5dir",  ".nethackrc",   NULL,         NULL,                  "nethack5",   "DECgraphics", 1, HK_FAMILY_50, HK_CURSES_SYMSET, 1, NULL },
     { "sporkhack", "SporkHack 0.6.5", "/usr/local/bin/sporkhack", "/usr/local/lib/sporkhackdir", ".sporkrc",     ".nethackrc", NULL,                  "sporkhack",  "DECgraphics", 1, HK_FAMILY_34, HK_CURSES_GFX, 1, "xterm" },
-    { "unnethack", "UnNetHack 6.0.17","/usr/local/bin/unnethack", "/usr/local/share/unnethack",  ".unnethackrc", ".nethackrc", "unnethackrc.default", "unnethack",  "DECgraphics", 0, HK_FAMILY_34 | HK_FAMILY_36, HK_CURSES_GFX, 1, "xterm" }
+    { "unnethack", "UnNetHack 6.0.17","/usr/local/bin/unnethack", "/usr/local/share/unnethack",  ".unnethackrc", ".nethackrc", "unnethackrc.default", "unnethack",  "DECgraphics", 0, HK_FAMILY_34 | HK_FAMILY_36, HK_CURSES_GFX, 1, "xterm" },
+    { "evilhack",  "EvilHack 0.9.3",  "/usr/local/bin/evilhack",  "/usr/local/lib/evilhackdir",  ".evilhackrc",  NULL,         NULL,                  "evilhack",   "DECgraphics", 0, HK_FAMILY_36, HK_CURSES_SYMSET, 1, "xterm" },
+    { "splicehack","SpliceHack 1.2.0","/usr/local/bin/splicehack","/usr/local/lib/splicehackdir",".splicehackrc",NULL,         NULL,                  "splicehack", "DECgraphics", 0, HK_FAMILY_36 | HK_FAMILY_50, HK_CURSES_SYMSET, 1, "xterm" }
 };
 
 int hk_game_count(void) { return (int)(sizeof(GAMES) / sizeof(GAMES[0])); }
