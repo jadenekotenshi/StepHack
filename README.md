@@ -86,6 +86,14 @@ locations can be changed in *Preferences*. More variants
 stock `xterm` terminal description instead of StepHack's own termcap entry; *Preferences* has a *Terminal* field to change
 that for any game (`stephack` selects StepHack's own entry).
 
+## Notes for whoever changes the menus
+
+This AppKit does not retain the menus it is given: it keeps bare pointers to the main menu, the submenus and the Windows and
+Services menus and uses them whenever the application is focused. An autoreleased menu is therefore freed when its pool is
+drained, and focusing the app then crashes it (the system log, `/usr/adm/messages`, says `message respondsToSelector: sent to
+freed object`). `AppController` holds every menu it makes (`-keepMenu:`) for the life of the program. Menus built before the event
+loop only survived because the main pool is never drained.
+
 ## Diagnosing terminal problems
 
 If a game draws wrongly, `touch ~/.StepHack.pty` and start the game: everything it writes is also saved, untouched, in
