@@ -16,6 +16,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 - (void)startGameIndex:(int)index;
 - (void)startGameIndex:(int)index mode:(int)mode;
 - (void)rebuildGamesMenu;
+- (void)addModeMenus;
 - (void)fillGamesMenu:(NSMenu *)menu mode:(int)mode;
 - (int)defaultGameIndex;
 @end
@@ -83,8 +84,8 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 - (void)rebuildGamesMenu
 {
     [self fillGamesMenu:gamesMenu mode:HK_MODE_NORMAL];
-    [self fillGamesMenu:wizardMenu mode:HK_MODE_WIZARD];
-    [self fillGamesMenu:exploreMenu mode:HK_MODE_EXPLORE];
+    if (wizardMenu) [self fillGamesMenu:wizardMenu mode:HK_MODE_WIZARD];
+    if (exploreMenu) [self fillGamesMenu:exploreMenu mode:HK_MODE_EXPLORE];
 }
 
 - (void)coloursChanged:(id)sender
@@ -121,10 +122,10 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 
     SSTrace("buildMenu: start");
     m = [self submenuNamed:@"Game" inMenu:main];
+    gameMenu = m;
+    SSTrace("buildMenu: the Game menu exists");
     gamesMenu = [self submenuNamed:@"New Game" inMenu:m];
-    wizardMenu = [self submenuNamed:@"New Wizard Mode Game" inMenu:m];
-    exploreMenu = [self submenuNamed:@"New Explore Mode Game" inMenu:m];
-    SSTrace("buildMenu: the game submenus exist (they are filled once the application is running)");
+    SSTrace("buildMenu: the New Game menu exists (it is filled, and the wizard and explore mode ones added, once the application is running)");
     [self addItem:@"New Game Again" action:@selector(newLastGame:) key:@"n" target:self toMenu:m];
     [self addItem:@"Options..." action:@selector(showOptions:) key:@"o" target:self toMenu:m];
     [[self addItem:@"System Settings..." action:@selector(showSysconf:) key:@"" target:self toMenu:m] setTag:TAG_SYSCONF];
@@ -204,11 +205,29 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 /* ---------------------------------------------------------------- */
 /* startup                                                          */
 
+/* The wizard and explore mode menus are made once the application is running: creating them while the menus were being
+ * built stopped a launch from Workspace dead (a launch of the binary itself was fine). */
+- (void)addModeMenus
+{
+    id item;
+
+    if (wizardMenu) return;
+    SSTrace("adding the wizard mode menu");
+    wizardMenu = [[[NSMenu alloc] initWithTitle:@"New Wizard Mode Game"] autorelease];
+    item = [gameMenu insertItemWithTitle:@"New Wizard Mode Game" action:NULL keyEquivalent:@"" atIndex:1];
+    [gameMenu setSubmenu:wizardMenu forItem:item];
+    SSTrace("adding the explore mode menu");
+    exploreMenu = [[[NSMenu alloc] initWithTitle:@"New Explore Mode Game"] autorelease];
+    item = [gameMenu insertItemWithTitle:@"New Explore Mode Game" action:NULL keyEquivalent:@"" atIndex:2];
+    [gameMenu setSubmenu:exploreMenu forItem:item];
+}
+
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
     int first = [self defaultGameIndex];
     NSLog(@"StepHack: applicationDidFinishLaunching");
     launched = YES;
+    [self addModeMenus];
     SSTrace("applicationDidFinishLaunching: filling the game menus");
     [self rebuildGamesMenu];
     SSTrace("applicationDidFinishLaunching: first game index %d (last played: %s)", first,

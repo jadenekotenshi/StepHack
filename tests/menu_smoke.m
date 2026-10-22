@@ -66,6 +66,7 @@ int main(void)
     games = submenu(submenu([NSApp mainMenu], @"Game"), @"New Game");
     CHECK(games != nil);
     CHECK([[games itemArray] count] == 0);                                  /* nothing is looked up while the menus are built */
+    [app addModeMenus];                                                    /* (what start-up does, without starting a game) */
     [app rescanGames:nil];
     t = titles(games);
     CHECK([t count] == 2 && [[t objectAtIndex:0] isEqualToString:@"No games found"]);       /* nothing installed */
