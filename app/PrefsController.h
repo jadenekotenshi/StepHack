@@ -5,7 +5,7 @@
 {
     NSWindow      *window;
     NSPopUpButton *gamePop;
-    NSTextField   *launcherField, *hackdirField, *rcField;
+    NSTextField   *launcherField, *hackdirField, *rcField, *termField;
     NSButton      *padSwitch, *lineSwitch;
     int            shown;                 /* index in the game table of the game the fields show */
 }

@@ -2,10 +2,11 @@
 #include "games.h"
 
 static const HkGameDef GAMES[] = {
-    { "nethack",   "NetHack 3.6.7",   "/usr/local/bin/nethack",   "/usr/local/lib/nethackdir",   ".nethackrc", NULL,          "nethack367", "DECgraphics", 1, HK_FAMILY_36, NULL },
-    { "slashem",   "Slash'EM 0.0.7",  "/usr/local/bin/slashem",   "/usr/local/slashemdir",       ".slashemrc", NULL,          "slashem",    "DECgraphics", 1, HK_FAMILY_34, NULL },
-    { "nethack5",  "NetHack 5.0",     "/usr/local/bin/nethack5",  "/usr/local/lib/nethack5dir",  ".nethackrc", NULL,          "nethack5",   "DECgraphics", 1, HK_FAMILY_50, NULL },
-    { "sporkhack", "SporkHack 0.6.5", "/usr/local/bin/sporkhack", "/usr/local/lib/sporkhackdir", ".sporkrc",   ".nethackrc",  "sporkhack",  "DECgraphics", 1, HK_FAMILY_34, "xterm" }
+    { "nethack",   "NetHack 3.6.7",   "/usr/local/bin/nethack",   "/usr/local/lib/nethackdir",   ".nethackrc",   NULL,         NULL,                  "nethack367", "DECgraphics", 1, HK_FAMILY_36, NULL },
+    { "slashem",   "Slash'EM 0.0.7",  "/usr/local/bin/slashem",   "/usr/local/slashemdir",       ".slashemrc",   NULL,         NULL,                  "slashem",    "DECgraphics", 1, HK_FAMILY_34, NULL },
+    { "nethack5",  "NetHack 5.0",     "/usr/local/bin/nethack5",  "/usr/local/lib/nethack5dir",  ".nethackrc",   NULL,         NULL,                  "nethack5",   "DECgraphics", 1, HK_FAMILY_50, NULL },
+    { "sporkhack", "SporkHack 0.6.5", "/usr/local/bin/sporkhack", "/usr/local/lib/sporkhackdir", ".sporkrc",     ".nethackrc", NULL,                  "sporkhack",  "DECgraphics", 1, HK_FAMILY_34, "xterm" },
+    { "unnethack", "UnNetHack 6.0.17","/usr/local/bin/unnethack", "/usr/local/share/unnethack",  ".unnethackrc", ".nethackrc", "unnethackrc.default", "unnethack",  "DECgraphics", 0, HK_FAMILY_34 | HK_FAMILY_36, "xterm" }
 };
 
 int hk_game_count(void) { return (int)(sizeof(GAMES) / sizeof(GAMES[0])); }

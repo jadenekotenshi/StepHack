@@ -1,6 +1,7 @@
 #import "ProcessRunner.h"
 #import "UIHelpers.h"
 #import "GameEnv.h"
+#import "GameConfig.h"
 #import "Reaper.h"
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +40,7 @@ extern int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds
     /* Everything the child needs is prepared before fork(): no Objective-C after it. */
     prog = hk_copy_c(UI_CPATH(program));
     argv = (char **)malloc((size_t)(n + 2) * sizeof(char *));
-    env = hk_game_environ(UI_CPATH(hackdir), game);
+    env = hk_game_environ(UI_CPATH(hackdir), [GameConfig termForGame:game] ? UI_CPATH([GameConfig termForGame:game]) : NULL);
     if (!prog || !argv || !env) return nil;
     argv[0] = prog;
     for (i = 0; i < n; i++) argv[i + 1] = hk_copy_c(UI_CPATH([args objectAtIndex:i]));

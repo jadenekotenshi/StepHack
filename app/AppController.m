@@ -53,7 +53,8 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
     m = [self submenuNamed:@"Game" inMenu:main];
     games = [self submenuNamed:@"New Game" inMenu:m];
     for (i = 0; i < hk_game_count(); i++) {
-        id item = [self addItem:[NSString stringWithCString:hk_game(i)->title] action:@selector(newGame:)
+        id item = [self addItem:[NSString stringWithFormat:@"%s%s", hk_game(i)->title, hk_game(i)->verified ? "" : " (untested)"]
+                         action:@selector(newGame:)
                             key:@"" target:self toMenu:games];
         [item setTag:i];
     }

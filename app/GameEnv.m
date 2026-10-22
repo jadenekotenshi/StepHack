@@ -22,7 +22,7 @@ static char *env_entry(const char *name, const char *value)
     return p;
 }
 
-char **hk_game_environ(const char *hackdir, const HkGameDef *game)
+char **hk_game_environ(const char *hackdir, const char *term)
 {
     int count = 0, i, k = 0;
     char **env;
@@ -35,8 +35,8 @@ char **hk_game_environ(const char *hackdir, const HkGameDef *game)
         if (strncmp(e, "TERM=", 5) == 0 || strncmp(e, "TERMCAP=", 8) == 0 || strncmp(e, "HACKDIR=", 8) == 0) continue;
         env[k++] = environ[i];
     }
-    if (game && game->term) {
-        env[k++] = env_entry("TERM", game->term);
+    if (term) {
+        env[k++] = env_entry("TERM", term);
     } else {
         env[k++] = env_entry("TERM", HK_TERM_NAME);
         env[k++] = env_entry("TERMCAP", hk_termcap_entry());

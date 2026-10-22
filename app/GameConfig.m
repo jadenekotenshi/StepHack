@@ -53,6 +53,22 @@
     return v ? v : [self defaultRcPathForGame:g];
 }
 
++ (NSString *)termForGame:(const HkGameDef *)g
+{
+    NSString *v = [self stored:@"term" game:g];
+    if (v) return [v isEqualToString:@HK_TERM_NAME] ? nil : v;
+    return g->term ? [NSString stringWithCString:g->term] : nil;
+}
+
++ (NSData *)rcDataForGame:(const HkGameDef *)g
+{
+    NSString *path = [self rcPathForGame:g];
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    if (data || !g->rcdefault) return data;
+    return [NSData dataWithContentsOfFile:[[self hackdirForGame:g] stringByAppendingPathComponent:
+                                              [NSString stringWithCString:g->rcdefault]]];
+}
+
 + (void)setPath:(NSString *)path forKey:(NSString *)key game:(const HkGameDef *)g
 {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
@@ -91,7 +107,7 @@
 + (int)numberPadForGame:(const HkGameDef *)g
 {
     NSString *path = [self rcPathForGame:g];
-    NSData *data = [NSData dataWithContentsOfFile:path];
+    NSData *data = [self rcDataForGame:g];
     HkRc *rc;
     const char *v = NULL;
     int found, pad = 0, changed = 0;

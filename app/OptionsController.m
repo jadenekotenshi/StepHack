@@ -79,7 +79,7 @@ static NSMutableDictionary *controllers = nil;
     hkrc_free(rc);
     [path release];
     path = [[GameConfig rcPathForGame:game] retain];
-    data = [NSData dataWithContentsOfFile:path];
+    data = [GameConfig rcDataForGame:game];
     rc = hkrc_parse(data ? (const char *)[data bytes] : "", data ? [data length] : 0);
 }
 

@@ -74,6 +74,26 @@ int main(void)
     [EndingStore setDirectory:[dir stringByAppendingPathComponent:@"endings"]];
     [fm createDirectoryAtPath:[dir stringByAppendingPathComponent:@"endings"] attributes:nil];
 
+    /* a game with a template options file starts from it, not from nothing */
+    {
+        const HkGameDef *u = hk_game_by_id("unnethack");
+        NSString *tmpl = [dir stringByAppendingPathComponent:@"unnethackrc.default"];
+        NSString *urc = [dir stringByAppendingPathComponent:@"urc"], *got;
+        [@"# template\nOPTIONS=pickup_types:$?!\n" writeToFile:tmpl atomically:YES];
+        [GameConfig setPath:dir forKey:@"hackdir" game:u];
+        [GameConfig setPath:urc forKey:@"rc" game:u];
+        CHECK([[GameConfig rcDataForGame:u] length] == [[NSData dataWithContentsOfFile:tmpl] length]);
+        CHECK([GameConfig numberPadForGame:u] == 1);
+        got = [NSString stringWithContentsOfFile:urc];
+        CHECK([got hasPrefix:@"# template\nOPTIONS=pickup_types:$?!\n"] && [got rangeOfString:@"number_pad:1"].length > 0);
+        CHECK([GameConfig termForGame:u] != nil && [[GameConfig termForGame:u] isEqualToString:@"xterm"]);
+        [GameConfig setPath:@"stephack" forKey:@"term" game:u];
+        CHECK([GameConfig termForGame:u] == nil);                              /* the override picks the termcap entry */
+        [GameConfig setPath:@"" forKey:@"term" game:u];
+        [GameConfig setPath:@"" forKey:@"hackdir" game:u];
+        [GameConfig setPath:@"" forKey:@"rc" game:u];
+    }
+
     s = [[GameSession alloc] initWithGame:g owner:owner];
     CHECK([s startReportingTo:&why]);
     tv = find_terminal([s window]);

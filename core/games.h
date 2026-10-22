@@ -17,6 +17,7 @@ typedef struct {
     const char *hackdir;        /* the game's data directory */
     const char *rcname;         /* run-commands file in the user's home directory */
     const char *rcname_alt;     /* an older name the game falls back to if the first is absent, or NULL */
+    const char *rcdefault;      /* a template options file in the data directory that the game copies for a new player, or NULL */
     const char *schema;         /* options schema name (the file schemas/<schema>.txt) */
     const char *line_option;    /* the boolean option that draws walls with line graphics ("DECgraphics"), NULL if unsure */
     int         verified;       /* 0 for a game whose OPENSTEP port is still being worked on */

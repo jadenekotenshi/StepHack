@@ -207,10 +207,10 @@ static void test_rc_robust(void)
 
 static void test_schema(void)
 {
-    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack" };
+    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack", "unnethack" };
     int g, i, j;
 
-    for (g = 0; g < 4; g++) {
+    for (g = 0; g < 5; g++) {
         char *text = hks_builtin(ids[g]);
         HkSchema *s;
         int groups = 0, opts = 0;
@@ -238,7 +238,7 @@ static void test_schema(void)
             }
         }
         CHECK(groups >= 4 && opts >= 40);
-        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0));
+        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0 || strcmp(ids[g], "unnethack") == 0));
         hks_free(s);
     }
     CHECK(hks_builtin("nosuch") == NULL);
@@ -398,6 +398,10 @@ static void test_games(void)
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/sporkhack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/sporkhackdir") == 0);
         CHECK(strcmp(sp->rcname, ".sporkrc") == 0 && strcmp(sp->rcname_alt, ".nethackrc") == 0 && strcmp(sp->term, "xterm") == 0);
         CHECK(hk_game_by_id("nethack")->term == NULL && hk_game_by_id("nethack")->rcname_alt == NULL);
+        sp = hk_game_by_id("unnethack");
+        CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/unnethack") == 0 && strcmp(sp->hackdir, "/usr/local/share/unnethack") == 0);
+        CHECK(strcmp(sp->rcname, ".unnethackrc") == 0 && strcmp(sp->rcdefault, "unnethackrc.default") == 0 && !sp->verified);
+        CHECK((sp->family & HK_FAMILY_34) && (sp->family & HK_FAMILY_36));
     }
     CHECK(strcmp(hk_game_by_id("nethack")->line_option, "DECgraphics") == 0 && strcmp(hk_game_by_id("slashem")->line_option, "DECgraphics") == 0);
     /* the termcap entry must fit a classic environment variable and be well formed */

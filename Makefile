@@ -46,10 +46,10 @@ check-objc:
 # Runs real programs through ProcessRunner (host only).
 runner-smoke:
 	mkdir -p build
-	for f in tests/runner_smoke.m app/ProcessRunner.m app/GameEnv.m app/UIHelpers.m; do \
+	for f in tests/runner_smoke.m app/ProcessRunner.m app/GameEnv.m app/GameConfig.m app/UIHelpers.m; do \
 	  $(CC) -c -x objective-c -fno-objc-arc -w -g -Iterm -Icore -Iapp $$f -o build/rs_$$(basename $$f .m).o || exit 1; \
 	done
-	$(CC) -c -w -g -Icore core/games.c -o build/rs_games.o
+	for f in core/games.c core/rcfile.c; do $(CC) -c -w -g -Icore $$f -o build/rs_c_$$(basename $$f .c).o || exit 1; done
 	$(CC) build/rs_*.o -framework Foundation -framework AppKit -o build/runner_smoke
 	build/runner_smoke
 

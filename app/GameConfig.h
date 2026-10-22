@@ -7,7 +7,12 @@
 + (NSString *)hackdirForGame:(const HkGameDef *)g;
 + (NSString *)rcPathForGame:(const HkGameDef *)g;
 + (NSString *)defaultRcPathForGame:(const HkGameDef *)g;     /* ignoring Preferences */
-+ (void)setPath:(NSString *)path forKey:(NSString *)key game:(const HkGameDef *)g;     /* key: launcher, hackdir, rc; "" restores the default */
+/* The TERM the game is run under: the one set in Preferences, else the game's own (nil: the stephack termcap entry). */
++ (NSString *)termForGame:(const HkGameDef *)g;
+/* The options file's contents, or, while the file doesn't exist, the template the game would copy for a new player (if it
+ * has one), or nil. */
++ (NSData *)rcDataForGame:(const HkGameDef *)g;
++ (void)setPath:(NSString *)path forKey:(NSString *)key game:(const HkGameDef *)g;     /* key: launcher, hackdir, rc, term; "" restores the default */
 + (BOOL)defaultToNumberPad;                                                           /* add number_pad:1 to a run-commands file that doesn't set it */
 + (void)setDefaultToNumberPad:(BOOL)flag;
 
