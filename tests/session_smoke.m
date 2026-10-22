@@ -74,6 +74,44 @@ int main(void)
     [EndingStore setDirectory:[dir stringByAppendingPathComponent:@"endings"]];
     [fm createDirectoryAtPath:[dir stringByAppendingPathComponent:@"endings"] attributes:nil];
 
+    /* the interface settings, for each style of game and each way the file can ask */
+    {
+        const HkGameDef *u = hk_game_by_id("unnethack"), *sl = hk_game_by_id("slashem");
+        NSString *urc = [dir stringByAppendingPathComponent:@"crc"], *got;
+        int curses = 0;
+        [GameConfig setPath:urc forKey:@"rc" game:u];
+        [@"# mine\nOPTIONS=!color\n" writeToFile:urc atomically:YES];
+        [GameConfig numberPadForGame:u curses:&curses];
+        got = [NSString stringWithContentsOfFile:urc];
+        CHECK(curses == 1 && [got hasPrefix:@"# mine\nOPTIONS=!color\n"]);
+        CHECK([got rangeOfString:@"windowtype:curses"].length > 0 && [got rangeOfString:@"cursesgraphics"].length > 0);
+        CHECK([got rangeOfString:@"OPTIONS=color"].length == 0 && [got rangeOfString:@"OPTIONS=perm_invent"].length > 0);  /* !color is respected */
+        CHECK([got rangeOfString:@"popup_dialog"].length > 0 && [got rangeOfString:@"splash_screen"].length > 0);
+        CHECK([got rangeOfString:@"DECgraphics"].length == 0);                          /* the tty option is not used under curses */
+
+        [@"OPTIONS=windowtype:tty\n" writeToFile:urc atomically:YES];                  /* the file asks for tty: honoured */
+        [GameConfig numberPadForGame:u curses:&curses];
+        got = [NSString stringWithContentsOfFile:urc];
+        CHECK(curses == 0 && [got rangeOfString:@"windowtype:tty"].length > 0 && [got rangeOfString:@"OPTIONS=DECgraphics"].length > 0);
+        CHECK([got rangeOfString:@"guicolor"].length == 0);
+
+        [GameConfig setUseCurses:0 forGame:u];                                          /* turned off in Preferences */
+        [@"" writeToFile:urc atomically:YES];
+        [GameConfig numberPadForGame:u curses:&curses];
+        got = [NSString stringWithContentsOfFile:urc];
+        CHECK(curses == 0 && [got rangeOfString:@"windowtype"].length == 0 && [got rangeOfString:@"DECgraphics"].length > 0);
+        [GameConfig setUseCurses:-1 forGame:u];
+
+        [GameConfig setPath:urc forKey:@"rc" game:sl];                                  /* no curses interface: always tty */
+        [@"" writeToFile:urc atomically:YES];
+        [GameConfig numberPadForGame:sl curses:&curses];
+        got = [NSString stringWithContentsOfFile:urc];
+        CHECK(curses == 0 && [got rangeOfString:@"windowtype"].length == 0 && [got rangeOfString:@"OPTIONS=DECgraphics"].length > 0);
+        CHECK(![GameConfig useCursesForGame:sl]);
+        [GameConfig setPath:@"" forKey:@"rc" game:sl];
+        [GameConfig setPath:@"" forKey:@"rc" game:u];
+    }
+
     /* a game with a template options file starts from it, not from nothing */
     {
         const HkGameDef *u = hk_game_by_id("unnethack");
@@ -87,6 +125,8 @@ int main(void)
         got = [NSString stringWithContentsOfFile:urc];
         CHECK([got hasPrefix:@"# template\nOPTIONS=pickup_types:$?!\n"] && [got rangeOfString:@"number_pad:1"].length > 0);
         CHECK([GameConfig termForGame:u] != nil && [[GameConfig termForGame:u] isEqualToString:@"xterm"]);
+        CHECK([GameConfig termForGame:hk_game_by_id("nethack")] == nil);                /* tty on termcap: stephack */
+        CHECK([[GameConfig termForGame:hk_game_by_id("nethack") curses:YES] isEqualToString:@"xterm"]);   /* curses: terminfo */
         [GameConfig setPath:@"stephack" forKey:@"term" game:u];
         CHECK([GameConfig termForGame:u] == nil);                              /* the override picks the termcap entry */
         [GameConfig setPath:@"" forKey:@"term" game:u];
@@ -102,7 +142,10 @@ int main(void)
     /* the options file got its defaults, and everything else in it is as it was */
     rctext = [NSString stringWithContentsOfFile:rc];
     CHECK([rctext hasPrefix:@"# my rc\nOPTIONS=color\n"]);
-    CHECK([rctext rangeOfString:@"number_pad:1"].length > 0 && [rctext rangeOfString:@"DECgraphics"].length > 0);
+    CHECK([rctext rangeOfString:@"number_pad:1"].length > 0);
+    CHECK([rctext rangeOfString:@"windowtype:curses"].length > 0 && [rctext rangeOfString:@"symset:DECgraphics"].length > 0);
+    CHECK([rctext rangeOfString:@"OPTIONS=guicolor"].length > 0 && [rctext rangeOfString:@"OPTIONS=mouse_support"].length > 0);
+    CHECK([s usesCurses] && [tv cols] == 110 && [tv rows] == 32);                 /* the curses interface gets the bigger window */
     CHECK([s padMode] == HK_PAD_DIGITS);
 
     /* keys: the delegate maps cursor keys, and leaves the rest */

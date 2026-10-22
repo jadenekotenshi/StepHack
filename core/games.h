@@ -7,6 +7,13 @@
 #ifndef HK_GAMES_H
 #define HK_GAMES_H
 
+/* How a game is told to use the curses interface and its line drawing. */
+enum {
+    HK_CURSES_NONE = 0,       /* the game has no curses interface */
+    HK_CURSES_SYMSET = 1,     /* 3.6 and later: OPTIONS=windowtype:curses and symset:DECgraphics */
+    HK_CURSES_GFX = 2         /* the 3.4.3 line with a curses port: windowtype:curses and cursesgraphics */
+};
+
 /* Which commands a game has depends on the line it descends from. */
 enum { HK_FAMILY_34 = 1, HK_FAMILY_36 = 2, HK_FAMILY_50 = 4 };    /* NetHack 3.4.3 and its variants (Slash'EM), 3.6.x, 5.0 */
 
@@ -22,6 +29,8 @@ typedef struct {
     const char *line_option;    /* the boolean option that draws walls with line graphics ("DECgraphics"), NULL if unsure */
     int         verified;       /* 0 for a game whose OPENSTEP port is still being worked on */
     int         family;         /* HK_FAMILY_* */
+    int         curses;         /* HK_CURSES_* */
+    int         curses_default; /* 1: run it with curses unless told otherwise (its package is built with that interface) */
     const char *term;           /* TERM for a game built on ncurses/terminfo, which cannot use the stephack termcap entry; NULL: use it */
 } HkGameDef;
 

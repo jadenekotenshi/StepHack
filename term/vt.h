@@ -113,6 +113,8 @@ void vt_write(vt *t, const unsigned char *data, size_t len);
  * *width is the number of valid cells in the returned line. */
 const vt_cell *vt_line_at(const vt *t, int idx, int *width);
 int  vt_scrollback_count(const vt *t);
+/* A row of the alternate screen (what a full-screen program last drew there) whether or not it is the one showing; NULL out of range. */
+const vt_cell *vt_alt_line_at(const vt *t, int row, int *width);
 void vt_clear_dirty(vt *t);
 void vt_mark_all_dirty(vt *t);
 

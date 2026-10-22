@@ -55,6 +55,8 @@
 #endif
 
 #define COMMAND_BAR_H 30.0
+#define CURSES_COLS 110                  /* the curses interface uses the whole window, so it gets a bigger one */
+#define CURSES_ROWS 32
 #define TICK_SECONDS 0.02
 #define MAX_READS_PER_TICK 8             /* x 16 KB, within TICK_BUDGET seconds */
 #define TICK_BUDGET 0.03
@@ -208,6 +210,7 @@ int hk_reap_child(int pid, int *status_out)
 - (const HkGameDef *)game { return game; }
 - (NSString *)endingPath { return endingPath; }
 - (int)padMode { return padMode; }
+- (BOOL)usesCurses { return usesCurses != 0; }
 - (void)setPadMode:(int)mode { padMode = mode; }
 
 /* ---------------------------------------------------------------- */
@@ -223,7 +226,7 @@ int hk_reap_child(int pid, int *status_out)
     NSRect scr = [[NSScreen mainScreen] frame];
 
     termView = [[TerminalView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100)];
-    cs = [termView contentSizeForCols:80 rows:24];
+    cs = usesCurses ? [termView contentSizeForCols:CURSES_COLS rows:CURSES_ROWS] : [termView contentSizeForCols:80 rows:24];
     content = NSMakeRect(0, 0, cs.width + sw, cs.height + COMMAND_BAR_H);
 
     window = [[NSWindow alloc] initWithContentRect:content
@@ -357,6 +360,7 @@ int hk_reap_child(int pid, int *status_out)
     int initCols, initRows;
     NSString *launcher = [GameConfig launcherForGame:game];
     NSString *hackdir = [GameConfig hackdirForGame:game];
+    NSString *term;
     NSFileManager *fm = [NSFileManager defaultManager];
     BOOL isDir = NO;
     char *launcherC, **env;
@@ -367,12 +371,14 @@ int hk_reap_child(int pid, int *status_out)
         return NO;
     }
 
+    /* The options file decides the interface (and gets StepHack's defaults); that decides the terminal and the window. */
+    padMode = hk_pad_mode([GameConfig numberPadForGame:game curses:&usesCurses]);
+    term = [GameConfig termForGame:game curses:usesCurses != 0];
+
     /* Everything the child needs is prepared before fork(): no Objective-C after it. */
     launcherC = hk_copy_c(UI_CPATH(launcher));
-    env = hk_game_environ(UI_CPATH(hackdir), [GameConfig termForGame:game] ? UI_CPATH([GameConfig termForGame:game]) : NULL);
+    env = hk_game_environ(UI_CPATH(hackdir), term ? UI_CPATH(term) : NULL);
     if (!launcherC || !env) { if (why) *why = @"Out of memory."; return NO; }
-
-    padMode = hk_pad_mode([GameConfig numberPadForGame:game]);
 
     [self buildWindow];
 

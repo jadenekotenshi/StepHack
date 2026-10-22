@@ -12,6 +12,10 @@ bool	extmenu	0	Menu for extended (#) commands
 bool	ignintr	0	Ignore the interrupt key	
 group	Display			
 bool	DECgraphics	0	Draw walls with line graphics	
+enum	windowtype		Interface	=StepHack's choice (curses where the game has it)|tty=Plain terminal (tty)|curses=Curses
+bool	guicolor	1	Colour the interface itself (curses)	
+bool	mouse_support	0	Use the mouse (curses)	
+bool	popup_dialog	0	Show prompts in pop-up windows (curses)	
 bool	color	1	Use colour	
 bool	hilite_pet	0	Highlight your pet	
 bool	hilite_pile	0	Highlight piles of objects	

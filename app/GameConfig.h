@@ -9,6 +9,9 @@
 + (NSString *)defaultRcPathForGame:(const HkGameDef *)g;     /* ignoring Preferences */
 /* The TERM the game is run under: the one set in Preferences, else the game's own (nil: the stephack termcap entry). */
 + (NSString *)termForGame:(const HkGameDef *)g;
+/* The same for a run with or without the curses interface: curses reads terminfo (through ncurses), which has no
+ * "stephack" entry, so it gets "xterm" unless Preferences or the game say otherwise. */
++ (NSString *)termForGame:(const HkGameDef *)g curses:(BOOL)curses;
 /* The options file's contents, or, while the file doesn't exist, the template the game would copy for a new player (if it
  * has one), or nil. */
 + (NSData *)rcDataForGame:(const HkGameDef *)g;
@@ -16,6 +19,10 @@
 + (BOOL)defaultToNumberPad;                                                           /* add number_pad:1 to a run-commands file that doesn't set it */
 + (void)setDefaultToNumberPad:(BOOL)flag;
 
+/* Whether the curses interface is used: the choice in Preferences if there is one, else the game's own default (only for a
+ * game that has a curses interface at all). */
++ (BOOL)useCursesForGame:(const HkGameDef *)g;
++ (void)setUseCurses:(int)choice forGame:(const HkGameDef *)g;       /* 1 yes, 0 no, -1 back to the game's default */
 + (BOOL)defaultToLineGraphics;                                                        /* add DECgraphics to a file that sets no symbol set */
 + (void)setDefaultToLineGraphics:(BOOL)flag;
 
@@ -23,4 +30,6 @@
  * default that is switched on (number_pad:1; the game's line-graphics option) and that the file leaves unset, writes it
  * into the file (creating it).  An option the user has set either way, or a symbol set they chose, is never touched. */
 + (int)numberPadForGame:(const HkGameDef *)g;
+/* The same, and *curses is set to 1 if the game will run with its curses interface (the file asks for it, or it is made to). */
++ (int)numberPadForGame:(const HkGameDef *)g curses:(int *)curses;
 @end

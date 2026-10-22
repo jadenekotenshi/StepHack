@@ -53,11 +53,17 @@
     return v ? v : [self defaultRcPathForGame:g];
 }
 
-+ (NSString *)termForGame:(const HkGameDef *)g
++ (NSString *)termForGame:(const HkGameDef *)g curses:(BOOL)curses
 {
     NSString *v = [self stored:@"term" game:g];
     if (v) return [v isEqualToString:@HK_TERM_NAME] ? nil : v;
-    return g->term ? [NSString stringWithCString:g->term] : nil;
+    if (g->term) return [NSString stringWithCString:g->term];
+    return curses ? @"xterm" : nil;
+}
+
++ (NSString *)termForGame:(const HkGameDef *)g
+{
+    return [self termForGame:g curses:NO];
 }
 
 + (NSData *)rcDataForGame:(const HkGameDef *)g
@@ -104,14 +110,42 @@
     [d synchronize];
 }
 
++ (BOOL)useCursesForGame:(const HkGameDef *)g
+{
+    NSString *v;
+    if (g->curses == HK_CURSES_NONE) return NO;
+    v = [self stored:@"curses" game:g];
+    if (v) return [v isEqualToString:@"1"];
+    return g->curses_default != 0;
+}
+
++ (void)setUseCurses:(int)choice forGame:(const HkGameDef *)g
+{
+    [self setPath:(choice < 0) ? @"" : (choice ? @"1" : @"0") forKey:@"curses" game:g];
+}
+
 + (int)numberPadForGame:(const HkGameDef *)g
+{
+    int curses;
+    return [self numberPadForGame:g curses:&curses];
+}
+
+/* Sets an option the file leaves unset, noting that the file changed. */
+static int add_bool_default(HkRc *rc, const char *name)
+{
+    if (hkrc_find(rc, name, NULL) != HKRC_ABSENT) return 0;
+    return hkrc_set_bool(rc, name, 1) == 0;
+}
+
++ (int)numberPadForGame:(const HkGameDef *)g curses:(int *)curses
 {
     NSString *path = [self rcPathForGame:g];
     NSData *data = [self rcDataForGame:g];
     HkRc *rc;
     const char *v = NULL;
-    int found, pad = 0, changed = 0;
+    int found, pad = 0, changed = 0, isCurses = 0;
 
+    *curses = 0;
     rc = hkrc_parse(data ? (const char *)[data bytes] : "", data ? [data length] : 0);
     if (!rc) return 0;
 
@@ -123,12 +157,38 @@
     } else if ([self defaultToNumberPad]) {
         if (hkrc_set_value(rc, "number_pad", "1") == 0) { pad = 1; changed = 1; }
     }
-    /* Line graphics for the walls, unless the file says anything about the symbols already. */
-    if (g->line_option && [self defaultToLineGraphics] &&
-        hkrc_find(rc, g->line_option, NULL) == HKRC_ABSENT && hkrc_find(rc, "symset", NULL) == HKRC_ABSENT &&
-        hkrc_find(rc, "IBMgraphics", NULL) == HKRC_ABSENT && hkrc_find(rc, "curses_graphics", NULL) == HKRC_ABSENT) {
-        if (hkrc_set_bool(rc, g->line_option, 1) == 0) changed = 1;
+
+    /* The interface: what the file says if it names one, else curses when that is wanted and the game has it. */
+    if (hkrc_find(rc, "windowtype", &v) == HKRC_VALUE && v) {
+        isCurses = (strcmp(v, "curses") == 0 || strcmp(v, "Curses") == 0);
+    } else if ([self useCursesForGame:g]) {
+        if (hkrc_set_value(rc, "windowtype", "curses") == 0) { isCurses = 1; changed = 1; }
     }
+
+    if (isCurses && g->curses != HK_CURSES_NONE) {
+        /* Line drawing, colour, mouse and the like, for whatever the file leaves unset. */
+        static const char *const plain[] = { "color", "guicolor", "mouse_support", "perm_invent", "splash_screen", "popup_dialog", NULL };
+        int i;
+
+        if ([self defaultToLineGraphics]) {
+            if (g->curses == HK_CURSES_SYMSET) {
+                if (hkrc_find(rc, "symset", NULL) == HKRC_ABSENT && hkrc_find(rc, "DECgraphics", NULL) == HKRC_ABSENT &&
+                    hkrc_find(rc, "IBMgraphics", NULL) == HKRC_ABSENT && hkrc_find(rc, "curses_graphics", NULL) == HKRC_ABSENT &&
+                    hkrc_set_value(rc, "symset", "DECgraphics") == 0) changed = 1;
+            } else if (add_bool_default(rc, "cursesgraphics")) {
+                changed = 1;
+            }
+        }
+        for (i = 0; plain[i]; i++)
+            if (add_bool_default(rc, plain[i])) changed = 1;
+    } else if (g->line_option && [self defaultToLineGraphics]) {
+        /* The plain tty interface: line graphics for the walls, unless the file says anything about the symbols already. */
+        if (hkrc_find(rc, g->line_option, NULL) == HKRC_ABSENT && hkrc_find(rc, "symset", NULL) == HKRC_ABSENT &&
+            hkrc_find(rc, "IBMgraphics", NULL) == HKRC_ABSENT && hkrc_find(rc, "curses_graphics", NULL) == HKRC_ABSENT) {
+            if (hkrc_set_bool(rc, g->line_option, 1) == 0) changed = 1;
+        }
+    }
+
     if (changed) {
         size_t len;
         char *text = hkrc_text(rc, &len);
@@ -137,10 +197,12 @@
             free(text);
             if (![out writeToFile:path atomically:YES]) {
                 SSTrace("could not write %s", UI_CPATH(path));
-                pad = (found == HKRC_VALUE || found == HKRC_BOOL) ? pad : 0;      /* the file stays as it was */
+                if (!(found == HKRC_VALUE || found == HKRC_BOOL)) pad = 0;       /* the file stays as it was */
+                isCurses = 0;
             }
         }
     }
+    *curses = isCurses && g->curses != HK_CURSES_NONE;
     hkrc_free(rc);
     return pad;
 }

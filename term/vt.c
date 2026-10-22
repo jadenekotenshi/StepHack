@@ -465,6 +465,13 @@ static void restore_cursor(vt *t, int alt)
     if (t->cy >= t->rows) t->cy = t->rows - 1;
 }
 
+const vt_cell *vt_alt_line_at(const vt *t, int row, int *width)
+{
+    if (row < 0 || row >= t->rows) return NULL;
+    if (width) *width = t->cols;
+    return t->alt_line[row];
+}
+
 static void switch_screen(vt *t, int alt)
 {
     if ((alt != 0) == (t->in_alt != 0)) return;

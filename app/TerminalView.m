@@ -515,7 +515,23 @@ static unsigned cell_key(const vt_cell *c, int invert, int reverse_screen,
     if (n > 0) [delegate terminalView:self sendBytes:out length:n];
 }
 
-/* The whole of what the terminal holds, as text: the last maxLines lines of scrollback plus screen. */
+/* One row of cells as text: box drawing as + - |, control characters as spaces, trailing blanks dropped. */
+static NSString *row_text(const vt_cell *cells, int w, unichar *buf)
+{
+    int i, n = 0;
+    for (i = 0; cells && i < w; i++) {
+        vt_u16 ch = cells[i].ch;
+        if (vt_box_arms(ch) || vt_block_kind(ch)) ch = vt_fallback_char(ch);
+        if (ch < ' ') ch = ' ';
+        buf[n++] = (unichar)ch;
+    }
+    while (n > 0 && buf[n - 1] == ' ') n--;
+    return [NSString stringWithCharacters:buf length:n];
+}
+
+/* The whole of what the terminal holds, as text: the last maxLines lines of scrollback plus screen.  A program that ran
+ * full-screen (curses) leaves its last display on the alternate screen when it exits, and the main screen shows nothing
+ * of it, so that display is added after the rest. */
 - (NSString *)transcript:(int)maxLines
 {
     int sb = vt_scrollback_count(term), first, last, line, i, w;
@@ -534,17 +550,25 @@ static unsigned cell_key(const vt_cell *c, int invert, int reverse_screen,
         last--;
     }
     for (line = first; line <= last; line++) {
-        const vt_cell *cells = vt_line_at(term, line, &w);
-        int n = 0;
-        for (i = 0; cells && i < w; i++) {
-            vt_u16 ch = cells[i].ch;
-            if (vt_box_arms(ch) || vt_block_kind(ch)) ch = vt_fallback_char(ch);
-            if (ch < ' ') ch = ' ';
-            buf[n++] = (unichar)ch;
-        }
-        while (n > 0 && buf[n - 1] == ' ') n--;
-        [out appendString:[NSString stringWithCharacters:buf length:n]];
+        [out appendString:row_text(vt_line_at(term, line, &w), w, buf)];
         [out appendString:@"\n"];
+    }
+    if (!term->in_alt) {
+        int altLast = rows - 1;
+        while (altLast >= 0) {
+            const vt_cell *cells = vt_alt_line_at(term, altLast, &w);
+            BOOL blank = YES;
+            for (i = 0; cells && i < w; i++) if (cells[i].ch > ' ') { blank = NO; break; }
+            if (!blank) break;
+            altLast--;
+        }
+        if (altLast >= 0) {
+            if ([out length] > 0) [out appendString:@"\n----- the last full-screen display -----\n\n"];
+            for (line = 0; line <= altLast; line++) {
+                [out appendString:row_text(vt_alt_line_at(term, line, &w), w, buf)];
+                [out appendString:@"\n"];
+            }
+        }
     }
     free(buf);
     return out;

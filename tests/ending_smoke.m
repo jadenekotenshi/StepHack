@@ -44,6 +44,17 @@ int main(void)
         CHECK(lines <= 5);
     }
 
+    /* a full-screen program leaves its last display on the alternate screen */
+    tv = [[[TerminalView alloc] initWithFrame:NSMakeRect(0, 0, 640, 400)] autorelease];
+    feed(tv, "shell prompt\r\n\033[?1049h\033[2J\033[H\033[3;5HYou die...\033[5;5HRIP\033[?1049l");
+    t = [tv transcript:600];
+    CHECK([t rangeOfString:@"shell prompt\n"].length > 0);
+    CHECK([t rangeOfString:@"the last full-screen display"].length > 0 && [t rangeOfString:@"You die..."].length > 0);
+    CHECK([t rangeOfString:@"RIP"].length > 0);
+    feed(tv, "\033[?1049h\033[2J\033[H");                                    /* still on the alternate screen: that is the screen */
+    t = [tv transcript:600];
+    CHECK([t rangeOfString:@"You die"].length == 0);
+
     /* the store, in a throwaway home directory */
     dir = [NSString stringWithFormat:@"/tmp/stephack-ending-test-%d", (int)getpid()];
     [[NSFileManager defaultManager] createDirectoryAtPath:dir attributes:nil];

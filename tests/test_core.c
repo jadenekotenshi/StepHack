@@ -398,6 +398,10 @@ static void test_games(void)
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/sporkhack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/sporkhackdir") == 0);
         CHECK(strcmp(sp->rcname, ".sporkrc") == 0 && strcmp(sp->rcname_alt, ".nethackrc") == 0 && strcmp(sp->term, "xterm") == 0);
         CHECK(hk_game_by_id("nethack")->term == NULL && hk_game_by_id("nethack")->rcname_alt == NULL);
+        CHECK(hk_game_by_id("slashem")->curses == HK_CURSES_NONE && hk_game_by_id("slashem")->curses_default == 0);
+        CHECK(hk_game_by_id("nethack")->curses == HK_CURSES_SYMSET && hk_game_by_id("nethack5")->curses == HK_CURSES_SYMSET);
+        CHECK(hk_game_by_id("sporkhack")->curses == HK_CURSES_GFX && hk_game_by_id("unnethack")->curses == HK_CURSES_GFX);
+        CHECK(hk_game_by_id("nethack")->curses_default && hk_game_by_id("sporkhack")->curses_default);
         sp = hk_game_by_id("unnethack");
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/unnethack") == 0 && strcmp(sp->hackdir, "/usr/local/share/unnethack") == 0);
         CHECK(strcmp(sp->rcname, ".unnethackrc") == 0 && strcmp(sp->rcdefault, "unnethackrc.default") == 0 && !sp->verified);

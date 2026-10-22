@@ -193,6 +193,20 @@ static void test_replies_title(void)
     vt_free(t);
 }
 
+static void test_alt_last_screen(void)
+{
+    vt *t = vt_new(20, 4, 0);
+    int w = 0;
+    const vt_cell *r;
+
+    feed(t, "main\033[?1049h\033[Halt text\033[?1049l");
+    CHECK(cell(t, 0, 0).ch == 'm');                                   /* the main screen is back */
+    r = vt_alt_line_at(t, 0, &w);                                       /* ... and the alternate one is still readable */
+    CHECK(r != NULL && w == 20 && r[0].ch == 'a' && r[4].ch == 't');
+    CHECK(vt_alt_line_at(t, 4, &w) == NULL && vt_alt_line_at(t, -1, &w) == NULL);
+    vt_free(t);
+}
+
 static void test_utf8_charsets(void)
 {
     vt *t = vt_new(20, 3, 0);
@@ -455,7 +469,7 @@ static void test_fuzz(void)
 int main(void)
 {
     test_basic(); test_wrap(); test_erase_edit(); test_sgr(); test_scroll();
-    test_alt_screen(); test_tabs_modes(); test_replies_title(); test_utf8_charsets();
+    test_alt_screen(); test_tabs_modes(); test_replies_title(); test_utf8_charsets(); test_alt_last_screen();
     test_nsenc(); test_resize(); test_keys_dirty(); test_dirty_spans(); test_mouse(); test_fuzz();
     TEST_DONE("vt");
 }

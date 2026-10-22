@@ -6,7 +6,7 @@
     NSWindow      *window;
     NSPopUpButton *gamePop;
     NSTextField   *launcherField, *hackdirField, *rcField, *termField;
-    NSButton      *padSwitch, *lineSwitch;
+    NSButton      *padSwitch, *lineSwitch, *cursesSwitch;
     int            shown;                 /* index in the game table of the game the fields show */
 }
 + (PrefsController *)sharedController;
@@ -15,4 +15,5 @@
 - (void)restoreDefaults:(id)sender;
 - (void)padChanged:(id)sender;
 - (void)lineChanged:(id)sender;
+- (void)cursesChanged:(id)sender;
 @end

@@ -22,6 +22,7 @@ enum { GS_RUNNING = 1, GS_ENDED };
     NSTimer       *timer;
     id             owner;
     const HkGameDef *game;
+    int            usesCurses;         /* the game runs with its curses interface: a larger window */
     int            padMode;            /* HK_PAD_*: how the cursor keys are turned into movement */
     pty_pending    pending;            /* bytes not yet accepted by a non-blocking write() */
 
@@ -39,6 +40,7 @@ enum { GS_RUNNING = 1, GS_ENDED };
 - (BOOL)startReportingTo:(NSString **)why;
 - (const HkGameDef *)game;
 - (int)padMode;
+- (BOOL)usesCurses;
 - (NSString *)endingPath;            /* the saved ending screen once the game is over, else nil */
 - (void)sendKeys:(const char *)keys;     /* as if typed */
 - (void)commandButton:(id)sender;
