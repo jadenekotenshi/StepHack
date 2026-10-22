@@ -3,8 +3,7 @@
 A native OPENSTEP 4.2 front end for NetHack and its relatives. It is not a tiles interface: the game still runs
 unmodified in its tty mode, inside a terminal window StepHack provides, and StepHack adds the conveniences around it.
 
-**Status: early.** The key mapping and options-file code are tested on a development Mac; the application itself has not yet
-been built or run on OPENSTEP. Expect rough edges and please report what you find.
+**Status:** runs on OPENSTEP 4.2 (i386 confirmed). All eight games below have been started and played from it; a new game added to the table is marked "(untested)" in the New Game menu until it has been.
 
 ## What it does
 
@@ -75,10 +74,10 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 | NetHack 3.6.7 | `/usr/local/bin/nethack` | `/usr/local/lib/nethackdir` | `~/.nethackrc` |
 | Slash'EM 0.0.7E7F3 | `/usr/local/bin/slashem` | `/usr/local/slashemdir` | `~/.slashemrc` |
 | NetHack 5.0 | `/usr/local/bin/nethack5` | `/usr/local/lib/nethack5dir` | `~/.nethackrc` |
-| EvilHack 0.9.3 (untested) | `/usr/local/bin/evilhack` | `/usr/local/lib/evilhackdir` | `~/.evilhackrc` |
-| SpliceHack 1.2.0 (untested) | `/usr/local/bin/splicehack` | `/usr/local/lib/splicehackdir` | `~/.splicehackrc` |
-| NetHack 3.4.3 (untested) | `/usr/local/bin/nethack343` | `/usr/local/lib/nethack343dir` | `~/.nethack343rc` (see below) |
-| UnNetHack 6.0.17 (untested) | `/usr/local/bin/unnethack` | `/usr/local/share/unnethack` | `~/.unnethackrc` (`~/.nethackrc` while that is absent; a new one starts from the game's `unnethackrc.default`) |
+| EvilHack 0.9.3 | `/usr/local/bin/evilhack` | `/usr/local/lib/evilhackdir` | `~/.evilhackrc` |
+| SpliceHack 1.2.0 | `/usr/local/bin/splicehack` | `/usr/local/lib/splicehackdir` | `~/.splicehackrc` |
+| NetHack 3.4.3 | `/usr/local/bin/nethack343` | `/usr/local/lib/nethack343dir` | `~/.nethack343rc` (see below) |
+| UnNetHack 6.0.17 | `/usr/local/bin/unnethack` | `/usr/local/share/unnethack` | `~/.unnethackrc` (`~/.nethackrc` while that is absent; a new one starts from the game's `unnethackrc.default`) |
 | SporkHack 0.6.5 | `/usr/local/bin/sporkhack` | `/usr/local/lib/sporkhackdir` | `~/.sporkrc` (`~/.nethackrc` while that is absent) |
 
 These are where the [openstep-pkg](https://github.com/jadenekotenshi/openstep-pkg) packages install them. All three

@@ -597,19 +597,19 @@ static void test_games(void)
         CHECK(hk_game_by_id("nethack")->curses_default && hk_game_by_id("sporkhack")->curses_default);
         sp = hk_game_by_id("unnethack");
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/unnethack") == 0 && strcmp(sp->hackdir, "/usr/local/share/unnethack") == 0);
-        CHECK(strcmp(sp->rcname, ".unnethackrc") == 0 && strcmp(sp->rcdefault, "unnethackrc.default") == 0 && !sp->verified);
+        CHECK(strcmp(sp->rcname, ".unnethackrc") == 0 && strcmp(sp->rcdefault, "unnethackrc.default") == 0 && sp->verified);
         CHECK((sp->family & HK_FAMILY_34) && (sp->family & HK_FAMILY_36));
         sp = hk_game_by_id("evilhack");
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/evilhack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/evilhackdir") == 0);
-        CHECK(strcmp(sp->rcname, ".evilhackrc") == 0 && sp->curses == HK_CURSES_SYMSET && strcmp(sp->term, "xterm") == 0 && !sp->verified);
+        CHECK(strcmp(sp->rcname, ".evilhackrc") == 0 && sp->curses == HK_CURSES_SYMSET && strcmp(sp->term, "xterm") == 0 && sp->verified);
         sp = hk_game_by_id("nethack343");
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/nethack343") == 0 && strcmp(sp->hackdir, "/usr/local/lib/nethack343dir") == 0);
         CHECK(strcmp(sp->rcname, ".nethack343rc") == 0 && sp->rc_env != NULL && strcmp(sp->rc_env, "NETHACKOPTIONS") == 0);
-        CHECK(sp->curses == HK_CURSES_GFX && sp->curses_default && strcmp(sp->term, "xterm") == 0 && sp->sysconf == NULL && !sp->verified);
+        CHECK(sp->curses == HK_CURSES_GFX && sp->curses_default && strcmp(sp->term, "xterm") == 0 && sp->sysconf == NULL && sp->verified);
         CHECK(hk_game_by_id("nethack")->rc_env == NULL && hk_game_by_id("sporkhack")->rc_env == NULL);
         sp = hk_game_by_id("splicehack");
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/splicehack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/splicehackdir") == 0);
-        CHECK(strcmp(sp->rcname, ".splicehackrc") == 0 && sp->curses == HK_CURSES_SYMSET && (sp->family & HK_FAMILY_50) && !sp->verified);
+        CHECK(strcmp(sp->rcname, ".splicehackrc") == 0 && sp->curses == HK_CURSES_SYMSET && (sp->family & HK_FAMILY_50) && sp->verified);
     }
     CHECK(strcmp(hk_game_by_id("nethack")->line_option, "DECgraphics") == 0 && strcmp(hk_game_by_id("slashem")->line_option, "DECgraphics") == 0);
     /* the termcap entry must fit a classic environment variable and be well formed */

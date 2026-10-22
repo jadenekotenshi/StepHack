@@ -98,7 +98,7 @@ int main(void)
     t = titles(games);
     CHECK([t count] == 4 && has(t, @"NetHack 3.6.7") && has(t, @"Slash'EM") && has(t, @"UnNetHack"));
     CHECK([[t objectAtIndex:0] hasPrefix:@"NetHack 3.6.7"] && [[t objectAtIndex:1] hasPrefix:@"Slash'EM"]);        /* table order */
-    CHECK(has(t, @"UnNetHack 6.0.17 (untested)"));                                            /* untested ones say so */
+    CHECK(has(t, @"UnNetHack 6.0.17") && !has(t, @"(untested)"));                              /* every game has been tried: no marker (a new one gets "(untested)") */
     {
         id item = [[games itemArray] objectAtIndex:1];
         CHECK([item tag] == 1 && hk_game([item tag]) == hk_game_by_id("slashem"));            /* the tag is the game's index */

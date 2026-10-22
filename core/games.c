@@ -6,10 +6,10 @@ static const HkGameDef GAMES[] = {
     { "slashem",   "Slash'EM 0.0.7",  "/usr/local/bin/slashem",   "/usr/local/slashemdir",       ".slashemrc",   NULL,         NULL,                  "slashem",    "DECgraphics", 1, HK_FAMILY_34, HK_CURSES_NONE, 0, NULL, NULL, NULL },
     { "nethack5",  "NetHack 5.0",     "/usr/local/bin/nethack5",  "/usr/local/lib/nethack5dir",  ".nethackrc",   NULL,         NULL,                  "nethack5",   "DECgraphics", 1, HK_FAMILY_50, HK_CURSES_SYMSET, 1, NULL, "sysconf", NULL },
     { "sporkhack", "SporkHack 0.6.5", "/usr/local/bin/sporkhack", "/usr/local/lib/sporkhackdir", ".sporkrc",     ".nethackrc", NULL,                  "sporkhack",  "DECgraphics", 1, HK_FAMILY_34, HK_CURSES_GFX, 1, "xterm", NULL, NULL },
-    { "nethack343","NetHack 3.4.3",   "/usr/local/bin/nethack343","/usr/local/lib/nethack343dir",".nethack343rc",NULL,       NULL,                  "nethack343", "DECgraphics", 0, HK_FAMILY_34, HK_CURSES_GFX, 1, "xterm", NULL, "NETHACKOPTIONS" },
-    { "unnethack", "UnNetHack 6.0.17","/usr/local/bin/unnethack", "/usr/local/share/unnethack",  ".unnethackrc", ".nethackrc", "unnethackrc.default", "unnethack",  "DECgraphics", 0, HK_FAMILY_34 | HK_FAMILY_36, HK_CURSES_GFX, 1, "xterm", NULL, NULL },
-    { "evilhack",  "EvilHack 0.9.3",  "/usr/local/bin/evilhack",  "/usr/local/lib/evilhackdir",  ".evilhackrc",  NULL,         NULL,                  "evilhack",   "DECgraphics", 0, HK_FAMILY_36, HK_CURSES_SYMSET, 1, "xterm", "sysconf", NULL },
-    { "splicehack","SpliceHack 1.2.0","/usr/local/bin/splicehack","/usr/local/lib/splicehackdir",".splicehackrc",NULL,         NULL,                  "splicehack", "DECgraphics", 0, HK_FAMILY_36 | HK_FAMILY_50, HK_CURSES_SYMSET, 1, "xterm", "sysconf", NULL }
+    { "nethack343","NetHack 3.4.3",   "/usr/local/bin/nethack343","/usr/local/lib/nethack343dir",".nethack343rc",NULL,       NULL,                  "nethack343", "DECgraphics", 1, HK_FAMILY_34, HK_CURSES_GFX, 1, "xterm", NULL, "NETHACKOPTIONS" },
+    { "unnethack", "UnNetHack 6.0.17","/usr/local/bin/unnethack", "/usr/local/share/unnethack",  ".unnethackrc", ".nethackrc", "unnethackrc.default", "unnethack",  "DECgraphics", 1, HK_FAMILY_34 | HK_FAMILY_36, HK_CURSES_GFX, 1, "xterm", NULL, NULL },
+    { "evilhack",  "EvilHack 0.9.3",  "/usr/local/bin/evilhack",  "/usr/local/lib/evilhackdir",  ".evilhackrc",  NULL,         NULL,                  "evilhack",   "DECgraphics", 1, HK_FAMILY_36, HK_CURSES_SYMSET, 1, "xterm", "sysconf", NULL },
+    { "splicehack","SpliceHack 1.2.0","/usr/local/bin/splicehack","/usr/local/lib/splicehackdir",".splicehackrc",NULL,         NULL,                  "splicehack", "DECgraphics", 1, HK_FAMILY_36 | HK_FAMILY_50, HK_CURSES_SYMSET, 1, "xterm", "sysconf", NULL }
 };
 
 const char *hk_mode_arg(int mode)
