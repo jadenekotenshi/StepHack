@@ -593,6 +593,7 @@ int hk_reap_child(int pid, int *status_out)
                             : WIFSIGNALED(status) ? 128 + WTERMSIG(status) : -1;
     }
     if (masterFD >= 0) { close(masterFD); masterFD = -1; }
+    SSTrace("%s ended with status %d", game->id, exitStatus);
     [self saveEnding];
     if (rawLog) { fclose((FILE *)rawLog); rawLog = NULL; }
     /* windowWillClose: is the only place that notifies owner, so it happens exactly once whether the game exited first or
@@ -648,6 +649,17 @@ int hk_reap_child(int pid, int *status_out)
     [self stopPolling];
     if (childPID > 0) { int st; kill(childPID, SIGKILL); (void)hk_reap_child(childPID, &st); }
     if (masterFD >= 0) { close(masterFD); masterFD = -1; }
+}
+
+/* For quitting the application: waits (polling by hand, the run loop is going away) for a game that was told to hang up. */
+- (void)finishClosing:(double)seconds
+{
+    NSTimeInterval stop = [NSDate timeIntervalSinceReferenceDate] + seconds;
+    while (state == GS_CLOSING && [NSDate timeIntervalSinceReferenceDate] < stop) {
+        [self closingTick];
+        if (state == GS_CLOSING) usleep(50000);
+    }
+    if (state == GS_CLOSING) [self abandon];                      /* still there: no orphan is left behind */
 }
 
 /* While a closed game saves: its output is read and thrown away; when it is gone (or too slow), everything is released. */
@@ -754,6 +766,7 @@ int hk_reap_child(int pid, int *status_out)
 
 - (void)windowWillClose:(NSNotification *)notification
 {
+    SSTrace("%s: its window is closing (state %d)", game->id, state);
     [self shutdown];
     [window setDelegate:nil];
     [owner sessionDidEnd:self];

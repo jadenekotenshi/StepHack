@@ -3,6 +3,9 @@
 #import "UIHelpers.h"
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 /*
  * Startup is narrated with NSLog so a launch that "does nothing" can be diagnosed:
@@ -11,6 +14,29 @@
  * to ~/.StepHack.trace when that file exists:   touch ~/.StepHack.trace
  * then launch from Workspace and read the file.
  */
+/* A crash must not be silent: while ~/.StepHack.trace exists a fatal signal writes one line to it (using only write(),
+ * which is safe in a signal handler) before the process dies as it would have. */
+static int traceFD = -1;
+
+static void fatal_signal(int sig)
+{
+    static const char *const names[] = { "?", "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP", "SIGABRT", "SIGEMT", "SIGFPE",
+                                         "SIGKILL", "SIGBUS", "SIGSEGV", "SIGSYS", "SIGPIPE", "SIGALRM", "SIGTERM" };
+    const char *name = (sig > 0 && sig < 16) ? names[sig] : names[0];
+    if (traceFD >= 0) {
+        write(traceFD, "FATAL: ", 7);
+        write(traceFD, name, strlen(name));
+        write(traceFD, " (the process dies)\n", 20);
+    }
+    signal(sig, SIG_DFL);
+    kill(getpid(), sig);
+}
+
+static void leaving(void)
+{
+    if (traceFD >= 0) write(traceFD, "the process exits\n", 18);
+}
+
 int main(int argc, char *argv[])
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -26,6 +52,16 @@ int main(int argc, char *argv[])
     SSTrace("  getenv(\"SHELL\")  = %s", getenv("SHELL") ? getenv("SHELL") : "(not set)");
     SSTrace("  NSUserName()      = %s", SSCS(NSUserName()));
     signal(SIGPIPE, SIG_IGN);                 /* writing to a pty whose slave just closed must not kill the app */
+    {
+        NSString *tp = [NSHomeDirectory() stringByAppendingPathComponent:@".StepHack.trace"];
+        traceFD = open(UI_CPATH(tp), O_WRONLY | O_APPEND);        /* only if the file exists: tracing is opt-in */
+        if (traceFD >= 0) {
+            signal(SIGSEGV, fatal_signal); signal(SIGBUS, fatal_signal); signal(SIGILL, fatal_signal);
+            signal(SIGFPE, fatal_signal); signal(SIGABRT, fatal_signal); signal(SIGTERM, fatal_signal);
+            signal(SIGHUP, fatal_signal);
+            atexit(leaving);
+        }
+    }
 
     NS_DURING
         [NSApplication sharedApplication];

@@ -9,6 +9,7 @@
     NSMenu         *keypadMenu;
     NSMenu         *gameMenu;          /* the Game menu itself */
     NSMenu         *wizardMenu, *exploreMenu;   /* the same games, started in wizard or explore mode */
+    NSString       *installedSig;      /* which games the menus were last built for */
     BOOL            launched;          /* the application is running: until then no menu item looks at the disk or the preferences */
     NSMenu         *gamesMenu;         /* the New Game submenu: only the games that are installed */
 }

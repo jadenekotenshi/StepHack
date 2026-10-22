@@ -44,6 +44,7 @@ enum { GS_RUNNING = 1, GS_ENDED, GS_CLOSING };    /* CLOSING: the window is gone
 - (BOOL)startReportingTo:(NSString **)why;
 - (const HkGameDef *)game;
 - (void)setPlayMode:(int)mode;              /* before -start...: HK_MODE_WIZARD runs the game with -D, HK_MODE_EXPLORE with -X */
+- (void)finishClosing:(double)seconds;     /* after -shutdown: waits for the game to save and exit, and kills it if it takes longer than this */
 - (void)abandon;                           /* kills the game at once, unsaved (for "Close Without Saving") */
 - (int)padMode;
 - (BOOL)usesCurses;

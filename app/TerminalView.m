@@ -812,7 +812,8 @@ static NSString *row_text(const vt_cell *cells, int w, unichar *buf)
     int line, col, w, e;
     const vt_cell *cells;
 
-    if ([self beginMouseReport:theEvent button:0]) return;   /* an app wants clicks: hold shift for local selection */
+    SSTrace("mouseDown (mouse mode %d, clicks %d)", term->mouse_mode, (int)[theEvent clickCount]);
+    if ([self beginMouseReport:theEvent button:0]) { SSTrace("mouseDown: reported to the game"); return; }   /* an app wants clicks: hold shift for local selection */
 
     p = [self convertPoint:[theEvent locationInWindow] fromView:nil];
     [[self window] makeFirstResponder:self];
@@ -855,6 +856,7 @@ static NSString *row_text(const vt_cell *cells, int w, unichar *buf)
     NSPoint p;
     int line, col;
     if (!mouseReportingActive) return;
+    SSTrace("mouseUp: reported to the game");
     p = [self convertPoint:[theEvent locationInWindow] fromView:nil];
     [self pointToCell:p line:&line col:&col];
     [self reportMouseLine:line col:col button:mouseReportButton flags:[theEvent modifierFlags] motion:0 release:1];

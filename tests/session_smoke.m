@@ -262,6 +262,24 @@ int main(void)
         }
     }
 
+    /* quitting: a game still running is hung up, saves, and is waited for (not left behind) */
+    {
+        NSString *hup2 = [dir stringByAppendingPathComponent:@"hupgame"], *saved2 = [dir stringByAppendingPathComponent:@"saved"];
+        Owner *o5 = [[[Owner alloc] init] autorelease];
+        GameSession *s5;
+        [fm removeFileAtPath:saved2 handler:nil];
+        [GameConfig setPath:hup2 forKey:@"launcher" game:g];
+        s5 = [[GameSession alloc] initWithGame:g owner:o5];
+        CHECK([s5 startReportingTo:&why]);
+        spin(0.4);
+        [s5 shutdown];                                                       /* what applicationWillTerminate: does ... */
+        [s5 finishClosing:5.0];                                              /* ... then waits */
+        CHECK([fm fileExistsAtPath:saved2]);
+        CHECK(![s5 isRunning]);
+        [[s5 window] close];
+        [s5 release];
+    }
+
     /* how a game's end is handled: normal -> closes; failed -> stays open; preference off -> stays open */
     {
         struct { const char *body; BOOL closeWhenDone; BOOL expectClosed; const char *what; } cases[3] = {

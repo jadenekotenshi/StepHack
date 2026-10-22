@@ -17,6 +17,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 - (void)buildFullMenu;
 - (void)startGameIndex:(int)index mode:(int)mode;
 - (void)rebuildGamesMenu;
+- (NSString *)installedSignature;
 - (void)addModeMenus;
 - (void)fillGamesMenu:(NSMenu *)menu mode:(int)mode;
 - (int)defaultGameIndex;
@@ -84,6 +85,8 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 /* The New Game menus list the games found on this machine, and (the first) a way to look again. */
 - (void)rebuildGamesMenu
 {
+    [installedSig release];
+    installedSig = [[self installedSignature] retain];
     [self fillGamesMenu:gamesMenu mode:HK_MODE_NORMAL];
     if (wizardMenu) [self fillGamesMenu:wizardMenu mode:HK_MODE_WIZARD];
     if (exploreMenu) [self fillGamesMenu:exploreMenu mode:HK_MODE_EXPLORE];
@@ -261,9 +264,42 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 }
 
 /* Coming back to the application is when a package may have been installed meanwhile. */
+/* One string naming the installed games, to tell whether the menus need rebuilding. */
+- (NSString *)installedSignature
+{
+    NSMutableString *sig = [NSMutableString string];
+    int i;
+    for (i = 0; i < hk_game_count(); i++) [sig appendString:[GameConfig isInstalled:hk_game(i)] ? @"1" : @"0"];
+    return sig;
+}
+
 - (void)applicationDidBecomeActive:(NSNotification *)notification
 {
-    if (launched) [self rebuildGamesMenu];
+    NSString *sig;
+    SSTrace("the application became active");
+    if (!launched) return;
+    sig = [self installedSignature];
+    if (installedSig && [sig isEqualToString:installedSig]) return;        /* nothing changed: leave the menus alone */
+    [installedSig release];
+    installedSig = [sig retain];
+    [self rebuildGamesMenu];
+    SSTrace("the game menus were rebuilt (%s)", UI_CPATH(sig));
+}
+
+- (void)applicationDidResignActive:(NSNotification *)notification
+{
+    SSTrace("the application resigned active");
+}
+
+/* Quitting hangs up the games that are still running (which saves them), waits a few seconds for them to finish, and
+ * kills what is left, so that no game is left running without a window. */
+- (void)applicationWillTerminate:(NSNotification *)notification
+{
+    unsigned i;
+    SSTrace("the application will terminate (%u game window(s) open)", (unsigned)[sessions count]);
+    for (i = 0; i < [sessions count]; i++) [[sessions objectAtIndex:i] shutdown];
+    for (i = 0; i < [sessions count]; i++) [[sessions objectAtIndex:i] finishClosing:5.0];
+    SSTrace("the games have been dealt with");
 }
 
 /* ---------------------------------------------------------------- */
