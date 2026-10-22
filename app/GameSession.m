@@ -212,6 +212,14 @@ int hk_reap_child(int pid, int *status_out)
 - (const HkGameDef *)game { return game; }
 - (NSString *)endingPath { return endingPath; }
 - (int)padMode { return padMode; }
+
+- (void)applyColours
+{
+    if ([GameConfig colourScheme] == 1)
+        [termView setForeground:[NSColor whiteColor] background:[NSColor blackColor]];
+    else
+        [termView setForeground:[NSColor blackColor] background:[NSColor whiteColor]];
+}
 - (BOOL)usesCurses { return usesCurses != 0; }
 - (void)setPadMode:(int)mode { padMode = mode; }
 
@@ -260,6 +268,7 @@ int hk_reap_child(int pid, int *status_out)
     [container release];
 
     [termView setDelegate:self];
+    [self applyColours];
     [termView setLocalScrollKeys:NO];                  /* Shift-PgUp/PgDn run northeast/southeast in a game */
     [termView setScroller:scroller];
     [window setTitle:[NSString stringWithCString:game->title]];

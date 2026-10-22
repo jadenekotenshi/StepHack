@@ -21,7 +21,7 @@ static PrefsController *shared = nil;
 
 - (void)buildWindow
 {
-    NSRect content = NSMakeRect(0, 0, 480, 358);
+    NSRect content = NSMakeRect(0, 0, 480, 390);
     NSView *v;
     int i;
 
@@ -34,25 +34,32 @@ static PrefsController *shared = nil;
     [window setDelegate:(id)self];
     v = [window contentView];
 
-    [v addSubview:ui_label(@"Game:", NSMakeRect(16, 318, 110, 18))];
-    gamePop = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(130, 314, 330, 24) pullsDown:NO];
+    [v addSubview:ui_label(@"Game:", NSMakeRect(16, 350, 110, 18))];
+    gamePop = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(130, 346, 330, 24) pullsDown:NO];
     for (i = 0; i < hk_game_count(); i++) [gamePop addItemWithTitle:[NSString stringWithCString:hk_game(i)->title]];
     [gamePop setTarget:self];
     [gamePop setAction:@selector(gameChanged:)];
     [v addSubview:gamePop];
 
-    [v addSubview:ui_label(@"Program:", NSMakeRect(16, 282, 110, 18))];
-    launcherField = ui_field(NSMakeRect(130, 280, 334, 22));
+    [v addSubview:ui_label(@"Program:", NSMakeRect(16, 314, 110, 18))];
+    launcherField = ui_field(NSMakeRect(130, 312, 334, 22));
     [v addSubview:launcherField];
-    [v addSubview:ui_label(@"Data directory:", NSMakeRect(16, 250, 110, 18))];
-    hackdirField = ui_field(NSMakeRect(130, 248, 334, 22));
+    [v addSubview:ui_label(@"Data directory:", NSMakeRect(16, 282, 110, 18))];
+    hackdirField = ui_field(NSMakeRect(130, 280, 334, 22));
     [v addSubview:hackdirField];
-    [v addSubview:ui_label(@"Options file:", NSMakeRect(16, 218, 110, 18))];
-    rcField = ui_field(NSMakeRect(130, 216, 334, 22));
+    [v addSubview:ui_label(@"Options file:", NSMakeRect(16, 250, 110, 18))];
+    rcField = ui_field(NSMakeRect(130, 248, 334, 22));
     [v addSubview:rcField];
-    [v addSubview:ui_label(@"Terminal:", NSMakeRect(16, 186, 110, 18))];
-    termField = ui_field(NSMakeRect(130, 184, 334, 22));
+    [v addSubview:ui_label(@"Terminal:", NSMakeRect(16, 218, 110, 18))];
+    termField = ui_field(NSMakeRect(130, 216, 334, 22));
     [v addSubview:termField];
+    [v addSubview:ui_label(@"Colours:", NSMakeRect(16, 186, 110, 18))];
+    colourPop = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(130, 182, 330, 24) pullsDown:NO];
+    [colourPop addItemWithTitle:@"Black on white"];
+    [colourPop addItemWithTitle:@"White on black"];
+    [colourPop setTarget:self];
+    [colourPop setAction:@selector(colourChanged:)];
+    [v addSubview:colourPop];
 
     cursesSwitch = ui_switch(@"Use the curses interface (for this game; needs a game built with it)", NSMakeRect(16, 150, 448, 22));
     [cursesSwitch setTarget:self];
@@ -92,6 +99,7 @@ static PrefsController *shared = nil;
     [padSwitch setState:[GameConfig defaultToNumberPad] ? NSOnState : NSOffState];
     [lineSwitch setState:[GameConfig defaultToLineGraphics] ? NSOnState : NSOffState];
     [closeSwitch setState:[GameConfig closeWhenDone] ? NSOnState : NSOffState];
+    [colourPop selectItemAtIndex:[GameConfig colourScheme]];
     [cursesSwitch setState:[GameConfig useCursesForGame:g] ? NSOnState : NSOffState];
     [cursesSwitch setEnabled:g->curses != HK_CURSES_NONE];
 }
@@ -143,6 +151,12 @@ static PrefsController *shared = nil;
 - (void)padChanged:(id)sender
 {
     [GameConfig setDefaultToNumberPad:([padSwitch state] == NSOnState)];
+}
+
+- (void)colourChanged:(id)sender
+{
+    [GameConfig setColourScheme:[colourPop indexOfSelectedItem]];
+    if ([[NSApp delegate] respondsToSelector:@selector(coloursChanged:)]) [[NSApp delegate] coloursChanged:nil];     /* open windows follow */
 }
 
 - (void)closeChanged:(id)sender

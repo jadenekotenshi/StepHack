@@ -67,6 +67,8 @@
 - (float)maxFPS;
 - (int)flushCount;
 - (float)lastFlushArea;                    /* points^2 of the last flush's redraw requests, for the tests */
+- (NSColor *)defaultBackground;                                    /* (for the tests) */
+- (void)setForeground:(NSColor *)fg background:(NSColor *)bg;       /* the default text and background colours */
 - (void)setLocalScrollKeys:(BOOL)flag;
 - (void)setConfirmsMultilinePaste:(BOOL)flag;
 - (void)setPasteAnswer:(int)answer;        /* tests: -1 ask for real, 0 refuse, 1 accept */

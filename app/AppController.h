@@ -11,6 +11,7 @@
 }
 - (void)buildMenu;
 - (void)newGame:(id)sender;
+- (void)coloursChanged:(id)sender;     /* Preferences changed the terminal colours: open windows follow */
 - (void)rescanGames:(id)sender;       /* look again at which games are installed and rebuild the New Game menu */
 - (void)newLastGame:(id)sender;
 - (void)setKeypad:(id)sender;

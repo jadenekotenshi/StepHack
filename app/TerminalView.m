@@ -243,6 +243,18 @@ static int iceil(float x)  { int i = (int)x; return (x > (float)i) ? i + 1 : i; 
 - (float)lastFlushArea { return lastFlushArea; }
 - (void)setConfirmsMultilinePaste:(BOOL)flag { confirmPaste = flag; }
 - (void)setLocalScrollKeys:(BOOL)flag { localScrollKeys = flag; }
+
+- (NSColor *)defaultBackground { return defaultBg; }
+
+- (void)setForeground:(NSColor *)fg background:(NSColor *)bg
+{
+    [fg retain]; [bg retain];
+    [defaultFg release];
+    [defaultBg release];
+    defaultFg = fg;
+    defaultBg = bg;
+    [self setNeedsDisplay:YES];
+}
 - (void)setPasteAnswer:(int)answer { pasteAnswer = answer; }
 
 - (void)writeBytes:(const unsigned char *)bytes length:(int)n

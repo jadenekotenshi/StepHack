@@ -131,6 +131,19 @@
     [d synchronize];
 }
 
++ (int)colourScheme
+{
+    int v = [[NSUserDefaults standardUserDefaults] integerForKey:@"ColourScheme"];
+    return (v == 1) ? 1 : 0;
+}
+
++ (void)setColourScheme:(int)scheme
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    [d setInteger:(scheme == 1 ? 1 : 0) forKey:@"ColourScheme"];
+    [d synchronize];
+}
+
 + (BOOL)defaultToLineGraphics
 {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];

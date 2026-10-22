@@ -31,6 +31,10 @@
 /* Whether a game window closes by itself when its game ends normally (status 0); a failed one stays open to be read. */
 + (BOOL)closeWhenDone;
 + (void)setCloseWhenDone:(BOOL)flag;
+/* The terminal's colours: 0 black on white (the default, as OPENSTEP's own applications), 1 white on black (what the games
+ * are written for: much of what they show is yellow). */
++ (int)colourScheme;
++ (void)setColourScheme:(int)scheme;
 + (BOOL)defaultToLineGraphics;                                                        /* add DECgraphics to a file that sets no symbol set */
 + (void)setDefaultToLineGraphics:(BOOL)flag;
 

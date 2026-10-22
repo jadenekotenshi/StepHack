@@ -43,6 +43,7 @@ enum { GS_RUNNING = 1, GS_ENDED };
 - (int)padMode;
 - (BOOL)usesCurses;
 - (NSString *)endingPath;            /* the saved ending screen once the game is over, else nil */
+- (void)applyColours;                      /* the terminal colours chosen in Preferences */
 - (void)sendKeys:(const char *)keys;     /* as if typed */
 - (void)commandButton:(id)sender;
 - (void)commandMenu:(id)sender;

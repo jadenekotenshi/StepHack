@@ -153,6 +153,16 @@ int main(void)
     CHECK([s usesCurses] && [tv cols] == 110 && [tv rows] == 32);                 /* the curses interface gets the bigger window */
     CHECK([s padMode] == HK_PAD_DIGITS);
 
+    /* colours: black on white until Preferences says otherwise, then the open window follows */
+    CHECK([[[tv defaultBackground] colorUsingColorSpaceName:NSCalibratedRGBColorSpace] redComponent] > 0.9);
+    [GameConfig setColourScheme:1];
+    [s applyColours];
+    CHECK([[[tv defaultBackground] colorUsingColorSpaceName:NSCalibratedRGBColorSpace] redComponent] < 0.1);
+    CHECK([GameConfig colourScheme] == 1);
+    [GameConfig setColourScheme:0];
+    [s applyColours];
+    CHECK([[[tv defaultBackground] colorUsingColorSpaceName:NSCalibratedRGBColorSpace] redComponent] > 0.9);
+
     /* keys: the delegate maps cursor keys, and leaves the rest */
     n = [s terminalView:tv translateKey:VT_KEY_UP mods:0 into:b];             CHECK(n == 1 && b[0] == '8');
     n = [s terminalView:tv translateKey:VT_KEY_PGDN mods:VT_MOD_SHIFT into:b]; CHECK(n == 2 && b[0] == 'G' && b[1] == '3');
@@ -219,6 +229,7 @@ int main(void)
         }
         [GameConfig setCloseWhenDone:YES];
     }
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"ColourScheme"];
 
     [fm removeFileAtPath:dir handler:nil];
     [GameConfig setPath:@"" forKey:@"launcher" game:g];

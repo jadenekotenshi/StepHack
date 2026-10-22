@@ -73,6 +73,12 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
     if ([gamesMenu respondsToSelector:@selector(sizeToFit)]) [gamesMenu sizeToFit];
 }
 
+- (void)coloursChanged:(id)sender
+{
+    unsigned i;
+    for (i = 0; i < [sessions count]; i++) [[sessions objectAtIndex:i] applyColours];
+}
+
 - (void)rescanGames:(id)sender
 {
     [self rebuildGamesMenu];
