@@ -59,7 +59,7 @@ ending-smoke:
 	for f in tests/ending_smoke.m app/TerminalView.m app/EndingStore.m app/UIHelpers.m; do \
 	  $(CC) -c -x objective-c -fno-objc-arc -w -g -Iterm -Icore -Iapp $$f -o build/es_$$(basename $$f .m).o || exit 1; \
 	done
-	for f in term/*.c core/games.c; do $(CC) -c -w -g -Iterm -Icore $$f -o build/es_c_$$(basename $$f .c).o || exit 1; done
+	for f in term/*.c core/games.c core/colours.c; do $(CC) -c -w -g -Iterm -Icore $$f -o build/es_c_$$(basename $$f .c).o || exit 1; done
 	$(CC) build/es_*.o -framework Foundation -framework AppKit -o build/ending_smoke
 	build/ending_smoke
 
