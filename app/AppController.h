@@ -17,6 +17,7 @@
 - (void)newLastGame:(id)sender;
 - (void)setKeypad:(id)sender;
 - (void)showOptions:(id)sender;
+- (void)showSysconf:(id)sender;
 - (void)showScores:(id)sender;
 - (void)showEnding:(id)sender;
 - (void)showPreferences:(id)sender;

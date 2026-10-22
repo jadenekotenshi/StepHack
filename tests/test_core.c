@@ -9,6 +9,7 @@
 #include "xlog.h"
 #include "commands.h"
 #include "colours.h"
+#include "sysconf.h"
 
 static int bytes_are(const unsigned char *got, int n, const char *want)
 {
@@ -377,6 +378,83 @@ static void test_commands(void)
         }
 }
 
+static void test_sysconf(void)
+{
+    const char *text =
+        "# Comment about wizards\n"
+        "#WIZARDS=nobody\n"
+        "WIZARDS=root games\n"
+        "\n"
+        "EXPLORERS=*   \n"
+        "  MAXPLAYERS = 10\n"
+        "#SHELLERS=\n"
+        "SEDUCE=1\n"
+        "WIZARDS=root games jade\n";
+    HkSysconf *sc = hksc_parse(text, strlen(text));
+    char *t;
+    size_t len;
+    int i;
+
+    CHECK(sc != NULL);
+    CHECK(hksc_get(sc, "WIZARDS") != NULL && strcmp(hksc_get(sc, "WIZARDS"), "root games jade") == 0);        /* the last wins */
+    CHECK(strcmp(hksc_get(sc, "EXPLORERS"), "*") == 0);                                                        /* trailing blanks trimmed */
+    CHECK(strcmp(hksc_get(sc, "MAXPLAYERS"), "10") == 0);                                                      /* blanks around = */
+    CHECK(hksc_get(sc, "SHELLERS") == NULL && hksc_get(sc, "NOSUCH") == NULL);                                 /* a commented line is not set */
+    CHECK(hksc_get(sc, "WIZ") == NULL);
+    /* unedited it comes back exactly */
+    t = hksc_text(sc, &len);
+    CHECK(t && strcmp(t, text) == 0 && len == strlen(text));
+    free(t);
+    /* an existing key is changed in place (the last of several) */
+    CHECK(hksc_set(sc, "WIZARDS", "jade") == 0 && strcmp(hksc_get(sc, "WIZARDS"), "jade") == 0);
+    t = hksc_text(sc, NULL);
+    CHECK(t && strstr(t, "WIZARDS=root games\n") && strstr(t, "WIZARDS=jade\n") && strstr(t, "WIZARDS=root games jade") == NULL);
+    free(t);
+    /* a key that only exists as a commented example gets its line just after it */
+    CHECK(hksc_set(sc, "SHELLERS", "jade") == 0);
+    t = hksc_text(sc, NULL);
+    CHECK(t && strstr(t, "#SHELLERS=\nSHELLERS=jade\nSEDUCE=1") != NULL);
+    free(t);
+    /* a new key goes at the end, with its newline */
+    CHECK(hksc_set(sc, "DUMPLOGFILE", "/tmp/nh.%n.log") == 0);
+    t = hksc_text(sc, NULL);
+    CHECK(t && strstr(t, "\nDUMPLOGFILE=/tmp/nh.%n.log\n") != NULL && t[strlen(t) - 1] == '\n');
+    free(t);
+    /* empty values are real values */
+    CHECK(hksc_set(sc, "EXPLORERS", "") == 0 && hksc_get(sc, "EXPLORERS") != NULL && hksc_get(sc, "EXPLORERS")[0] == '\0');
+    /* unset removes the active lines and keeps the comments */
+    CHECK(hksc_unset(sc, "WIZARDS") == 0 && hksc_get(sc, "WIZARDS") == NULL);
+    t = hksc_text(sc, NULL);
+    CHECK(t && strstr(t, "# Comment about wizards") && strstr(t, "#WIZARDS=nobody") && strstr(t, "WIZARDS=root") == NULL);
+    free(t);
+    hksc_free(sc);
+
+    /* no trailing newline, empty, odd input */
+    sc = hksc_parse("A=1", 3);
+    CHECK(hksc_set(sc, "B", "2") == 0);
+    t = hksc_text(sc, NULL);
+    CHECK(t && strcmp(t, "A=1\nB=2\n") == 0);
+    free(t);
+    hksc_free(sc);
+    sc = hksc_parse("", 0);
+    CHECK(sc != NULL && hksc_get(sc, "A") == NULL && hksc_set(sc, "A", "x") == 0);
+    t = hksc_text(sc, NULL);
+    CHECK(t && strcmp(t, "A=x\n") == 0);
+    free(t);
+    hksc_free(sc);
+    sc = hksc_parse("=\n==\n#\nWIZARDS\nWIZARDSX=1\n", 28);
+    CHECK(sc && hksc_get(sc, "WIZARDS") == NULL);                                       /* near misses are not the key */
+    hksc_free(sc);
+
+    /* the keys offered */
+    CHECK(hksc_key_count() >= 5);
+    for (i = 0; i < hksc_key_count(); i++) {
+        const HkSysconfKey *k = hksc_key(i);
+        CHECK(k && k->key[0] && k->label[0] && k->help[0] && k->kind >= HKSC_TEXT && k->kind <= HKSC_BOOL);
+    }
+    CHECK(hksc_key(-1) == NULL && hksc_key(hksc_key_count()) == NULL);
+}
+
 static int near(double a, double b) { return a - b < 0.001 && b - a < 0.001; }
 
 static void test_colours(void)
@@ -435,12 +513,12 @@ static void test_colours(void)
 
 static void test_games(void)
 {
-    CHECK(hk_mode_arg(HK_MODE_NORMAL) == NULL && strcmp(hk_mode_arg(HK_MODE_WIZARD), "-D") == 0 && strcmp(hk_mode_arg(HK_MODE_EXPLORE), "-X") == 0);
-    CHECK(hk_mode_name(HK_MODE_NORMAL)[0] == '\0' && strcmp(hk_mode_name(HK_MODE_WIZARD), "wizard mode") == 0);
-    CHECK(hk_mode_arg(99) == NULL);
     const char *tc = hk_termcap_entry();
     int i;
 
+    CHECK(hk_mode_arg(HK_MODE_NORMAL) == NULL && strcmp(hk_mode_arg(HK_MODE_WIZARD), "-D") == 0 && strcmp(hk_mode_arg(HK_MODE_EXPLORE), "-X") == 0);
+    CHECK(hk_mode_name(HK_MODE_NORMAL)[0] == '\0' && strcmp(hk_mode_name(HK_MODE_WIZARD), "wizard mode") == 0);
+    CHECK(hk_mode_arg(99) == NULL);
     CHECK(hk_game_count() >= 3);
     for (i = 0; i < hk_game_count(); i++) {
         const HkGameDef *g = hk_game(i);
@@ -458,6 +536,9 @@ static void test_games(void)
         CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/sporkhack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/sporkhackdir") == 0);
         CHECK(strcmp(sp->rcname, ".sporkrc") == 0 && strcmp(sp->rcname_alt, ".nethackrc") == 0 && strcmp(sp->term, "xterm") == 0);
         CHECK(hk_game_by_id("nethack")->term == NULL && hk_game_by_id("nethack")->rcname_alt == NULL);
+        CHECK(hk_game_by_id("nethack")->sysconf && strcmp(hk_game_by_id("nethack")->sysconf, "sysconf") == 0);
+        CHECK(hk_game_by_id("nethack5")->sysconf && hk_game_by_id("evilhack")->sysconf && hk_game_by_id("splicehack")->sysconf);
+        CHECK(!hk_game_by_id("slashem")->sysconf && !hk_game_by_id("sporkhack")->sysconf && !hk_game_by_id("unnethack")->sysconf);
         CHECK(hk_game_by_id("slashem")->curses == HK_CURSES_NONE && hk_game_by_id("slashem")->curses_default == 0);
         CHECK(hk_game_by_id("nethack")->curses == HK_CURSES_SYMSET && hk_game_by_id("nethack5")->curses == HK_CURSES_SYMSET);
         CHECK(hk_game_by_id("sporkhack")->curses == HK_CURSES_GFX && hk_game_by_id("unnethack")->curses == HK_CURSES_GFX);
@@ -492,6 +573,7 @@ int main(void)
     test_xlog();
     test_commands();
     test_colours();
+    test_sysconf();
     test_schema_apply();
     TEST_DONE("core");
 }

@@ -2,13 +2,14 @@
 #import "PrefsController.h"
 #import "OptionsController.h"
 #import "ScoresController.h"
+#import "SysconfController.h"
 #import "GameConfig.h"
 #import "EndingsController.h"
 #import "UIHelpers.h"
 #include "keymap.h"
 
 /* Menu item tags: a game's index in the game table, and the keypad modes. */
-enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
+enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG_SYSCONF };
 
 /* gcc 2.7.2 does not look ahead within an @implementation, so anything called before its definition must be declared. */
 @interface AppController (Private)
@@ -125,6 +126,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
     [self rebuildGamesMenu];
     [self addItem:@"New Game Again" action:@selector(newLastGame:) key:@"n" target:self toMenu:m];
     [self addItem:@"Options..." action:@selector(showOptions:) key:@"o" target:self toMenu:m];
+    [[self addItem:@"System Settings..." action:@selector(showSysconf:) key:@"" target:self toMenu:m] setTag:TAG_SYSCONF];
     [self addItem:@"Scores..." action:@selector(showScores:) key:@"s" target:self toMenu:m];
     [self addItem:@"View Ending..." action:@selector(showEnding:) key:@"e" target:self toMenu:m];
     [self addItem:@"Close Window" action:@selector(performClose:) key:@"w" target:nil toMenu:m];
@@ -175,6 +177,11 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
 - (BOOL)validateMenuItem:(id)item
 {
     int tag = [item tag];
+    if (tag == TAG_SYSCONF) {                                  /* only for a game that has a sysconf file */
+        GameSession *fs = [self frontSession];
+        const HkGameDef *fg = fs ? [fs game] : hk_game(lastGame);
+        return fg != NULL && [SysconfController hasSysconfForGame:fg];
+    }
     if (tag >= TAG_PAD_LETTERS && tag <= TAG_PAD_QWERTZ) {
         GameSession *s = [self frontSession];
         int mode = HK_PAD_LETTERS;
@@ -271,6 +278,13 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
     GameSession *s = [self frontSession];
     const HkGameDef *g = s ? [s game] : hk_game(lastGame);
     if (g) [[OptionsController controllerForGame:g] showWindow];
+}
+
+- (void)showSysconf:(id)sender
+{
+    GameSession *s = [self frontSession];
+    const HkGameDef *g = s ? [s game] : hk_game(lastGame);
+    if (g && [SysconfController hasSysconfForGame:g]) [[SysconfController controllerForGame:g] showWindow];
 }
 
 - (void)showScores:(id)sender

@@ -42,6 +42,11 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
   `-D` or `-X` option (the window title says so). Explore mode is open to everyone; a game may refuse wizard mode to a user
   it has not been told about (NetHack 3.6 and later list them as `WIZARDS=` in the `sysconf` file in the game's data
   directory) -- the refusal stays in the window, which is not closed for a failed game.
+- **System settings.** *Game > System Settings...* edits the few settings in a game's `sysconf` file that matter with
+  several users: who may use wizard mode (`WIZARDS`), explore mode (`EXPLORERS`) and the shell escape (`SHELLERS`), how many
+  games may run at once, seduction and the dump file. The file belongs to root and should be group-writable by wheel
+  (`chgrp wheel` and `chmod 664` as root); the window changes it in place when you can write it, and otherwise shows it
+  read-only and says why. Only the games that read a `sysconf` (NetHack 3.6.7, 5.0, EvilHack, SpliceHack) offer it.
 - **Command bar.** A row of buttons under the game (Pray, Name, Call, Loot, Chat, Enhance, Overview, Attrib) and a *More*
   menu (Force, Untrap, Turn Undead, Offer, Sit, Ride, Wipe, Rub, Dip, Invoke, Jump, Monster, Adjust, Conduct, Discoveries,
   Look Here, Redraw) type the command for you. They send extended commands, which every version takes whatever the
