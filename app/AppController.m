@@ -15,6 +15,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 @interface AppController (Private)
 - (void)startGameIndex:(int)index;
 - (void)buildFullMenu;
+- (int)menuLevel;
 - (void)startGameIndex:(int)index mode:(int)mode;
 - (void)rebuildGamesMenu;
 - (NSString *)installedSignature;
@@ -87,7 +88,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 {
     [installedSig release];
     installedSig = [[self installedSignature] retain];
-    [self fillGamesMenu:gamesMenu mode:HK_MODE_NORMAL];
+    if (gamesMenu) [self fillGamesMenu:gamesMenu mode:HK_MODE_NORMAL];
     if (wizardMenu) [self fillGamesMenu:wizardMenu mode:HK_MODE_WIZARD];
     if (exploreMenu) [self fillGamesMenu:exploreMenu mode:HK_MODE_EXPLORE];
 }
@@ -131,16 +132,28 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     [NSApp setMainMenu:main];
 }
 
+/* How much of the menu is built, for finding what a window system objects to: the MenuLevel default (defaults write StepHack
+ * MenuLevel n), 3 if unset.  0: only Quit.  1: the menus without any submenu.  2: also New Game and Keypad.  3: everything. */
+- (int)menuLevel
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    int level = ([d objectForKey:@"MenuLevel"] == nil) ? 3 : [d integerForKey:@"MenuLevel"];
+    return (level < 0) ? 0 : (level > 3 ? 3 : level);
+}
+
 - (void)buildFullMenu
 {
     NSMenu *main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
     NSMenu *m;
+    int level = [self menuLevel];
 
-    SSTrace("buildFullMenu: start");
+    SSTrace("buildFullMenu: start (menu level %d)", level);
+    menuLevel = level;
+    if (level == 0) return;                                  /* the minimal menu stays */
     m = [self submenuNamed:@"Game" inMenu:main];
     gameMenu = m;
     SSTrace("buildFullMenu: the Game menu exists");
-    gamesMenu = [self submenuNamed:@"New Game" inMenu:m];
+    if (level >= 2) gamesMenu = [self submenuNamed:@"New Game" inMenu:m];
     [self addItem:@"New Game Again" action:@selector(newLastGame:) key:@"n" target:self toMenu:m];
     [self addItem:@"Options..." action:@selector(showOptions:) key:@"o" target:self toMenu:m];
     [[self addItem:@"System Settings..." action:@selector(showSysconf:) key:@"" target:self toMenu:m] setTag:TAG_SYSCONF];
@@ -148,15 +161,17 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     [self addItem:@"View Ending..." action:@selector(showEnding:) key:@"e" target:self toMenu:m];
     [self addItem:@"Close Window" action:@selector(performClose:) key:@"w" target:nil toMenu:m];
 
-    keypadMenu = [self submenuNamed:@"Keypad" inMenu:m];
-    [[self addItem:@"Number keys (number_pad)" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
-        setTag:TAG_PAD_DIGITS];
-    [[self addItem:@"Phone layout" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
-        setTag:TAG_PAD_PHONE];
-    [[self addItem:@"Letter keys (hjklyubn)" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
-        setTag:TAG_PAD_LETTERS];
-    [[self addItem:@"Letter keys, y and z swapped" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
-        setTag:TAG_PAD_QWERTZ];
+    if (level >= 2) {
+        keypadMenu = [self submenuNamed:@"Keypad" inMenu:m];
+        [[self addItem:@"Number keys (number_pad)" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
+            setTag:TAG_PAD_DIGITS];
+        [[self addItem:@"Phone layout" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
+            setTag:TAG_PAD_PHONE];
+        [[self addItem:@"Letter keys (hjklyubn)" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
+            setTag:TAG_PAD_LETTERS];
+        [[self addItem:@"Letter keys, y and z swapped" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
+            setTag:TAG_PAD_QWERTZ];
+    }
 
     SSTrace("buildFullMenu: Game menu done");
     m = [self submenuNamed:@"Edit" inMenu:main];
@@ -172,8 +187,10 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     [self addItem:@"Miniaturize Window" action:@selector(performMiniaturize:) key:@"m" target:nil toMenu:m];
     [NSApp setWindowsMenu:m];
 
-    m = [self submenuNamed:@"Services" inMenu:main];
-    [NSApp setServicesMenu:m];
+    if (level >= 3) {
+        m = [self submenuNamed:@"Services" inMenu:main];
+        [NSApp setServicesMenu:m];
+    }
 
     [self addItem:@"Hide" action:@selector(hide:) key:@"h" target:NSApp toMenu:main];
     [self addItem:@"Quit" action:@selector(terminate:) key:@"q" target:NSApp toMenu:main];
@@ -226,7 +243,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 {
     id item;
 
-    if (wizardMenu) return;
+    if (wizardMenu || menuLevel < 3 || !gameMenu) return;
     SSTrace("adding the wizard mode menu");
     wizardMenu = [[[NSMenu alloc] initWithTitle:@"New Wizard Mode Game"] autorelease];
     item = [gameMenu insertItemWithTitle:@"New Wizard Mode Game" action:NULL keyEquivalent:@"" atIndex:1];

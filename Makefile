@@ -83,7 +83,17 @@ menu-smoke:
 	$(CC) build/ms_*.o -framework Foundation -framework AppKit -o build/menu_smoke
 	build/menu_smoke
 
+# Draws whole screens of everything under the address checker (host only).
+draw-smoke:
+	mkdir -p build
+	for f in tests/draw_smoke.m app/TerminalView.m app/GameConfig.m app/UIHelpers.m; do \
+	  $(CC) -c -x objective-c -fno-objc-arc -w -g -fsanitize=address,undefined -Iterm -Icore -Iapp $$f -o build/ds_$$(basename $$f .m).o || exit 1; \
+	done
+	for f in term/*.c core/*.c; do $(CC) -c -w -g -fsanitize=address,undefined -Iterm -Icore $$f -o build/ds_c_$$(basename $$f .c).o || exit 1; done
+	$(CC) -fsanitize=address,undefined build/ds_*.o -framework Foundation -framework AppKit -o build/draw_smoke
+	build/draw_smoke
+
 clean:
 	rm -rf build
 
-.PHONY: all test lint check-objc runner-smoke ending-smoke session-smoke menu-smoke clean
+.PHONY: all test lint check-objc runner-smoke ending-smoke session-smoke menu-smoke draw-smoke clean
