@@ -395,6 +395,7 @@ int hk_reap_child(int pid, int *status_out)
     /* The options file decides the interface (and gets StepHack's defaults); that decides the terminal and the window. */
     padMode = hk_pad_mode([GameConfig numberPadForGame:game curses:&usesCurses]);
     term = [GameConfig termForGame:game curses:usesCurses != 0];
+    SSTrace("%s: options file prepared (number pad %d, curses %d, TERM %s)", game->id, padMode, usesCurses, term ? UI_CPATH(term) : HK_TERM_NAME);
 
     /* Everything the child needs is prepared before fork(): no Objective-C after it. */
     launcherC = hk_copy_c(UI_CPATH(launcher));
@@ -405,6 +406,7 @@ int hk_reap_child(int pid, int *status_out)
     if (!launcherC || !env) { if (why) *why = @"Out of memory."; return NO; }
 
     [self buildWindow];
+    SSTrace("%s: window built", game->id);
 
     masterFD = open_master_pty(slaveName);
     if (masterFD < 0) {
@@ -514,6 +516,7 @@ int hk_reap_child(int pid, int *status_out)
     }
 
     /* ---- parent ---- */
+    SSTrace("%s: forked pid %d", game->id, (int)pid);
     childPID = pid;
     /* A diagnostic: while ~/.StepHack.pty exists, every byte the game writes is also saved, untouched, in
      * ~/.StepHack.ptylog (the file is started afresh for each game), so what a terminal problem really is can be seen. */

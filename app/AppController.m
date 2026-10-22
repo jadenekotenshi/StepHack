@@ -203,8 +203,10 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 {
     int first = [self defaultGameIndex];
     NSLog(@"StepHack: applicationDidFinishLaunching");
-    SSTrace("applicationDidFinishLaunching");
+    SSTrace("applicationDidFinishLaunching: first game index %d (last played: %s)", first,
+            [GameConfig lastGameId] ? UI_CPATH([GameConfig lastGameId]) : "(none)");
     if (first < 0) {
+        SSTrace("no installed game found: alert and Preferences");
         NSRunAlertPanel(@"StepHack", @"%@", @"OK", nil, nil,
                         @"No game was found. Install one (its package puts the program in /usr/local/bin), or tell "
                         @"Preferences where it is; the New Game menu lists the games that can be started.");
@@ -213,6 +215,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     }
     lastGame = first;
     [self startGameIndex:first];
+    SSTrace("start-up finished with %u game window(s)", (unsigned)[sessions count]);
 }
 
 /* Coming back to the application is when a package may have been installed meanwhile. */
@@ -236,6 +239,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     NSString *why = nil;
 
     if (!g) return;
+    SSTrace("starting %s (mode %d)", g->id, mode);
     lastGame = index;
     [GameConfig setLastGameId:[NSString stringWithCString:g->id]];
     s = [[GameSession alloc] initWithGame:g owner:self];
