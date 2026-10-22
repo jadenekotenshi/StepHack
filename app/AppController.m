@@ -2,12 +2,20 @@
 #import "PrefsController.h"
 #import "OptionsController.h"
 #import "ScoresController.h"
+#import "GameConfig.h"
 #import "EndingsController.h"
 #import "UIHelpers.h"
 #include "keymap.h"
 
 /* Menu item tags: a game's index in the game table, and the keypad modes. */
 enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
+
+/* gcc 2.7.2 does not look ahead within an @implementation, so anything called before its definition must be declared. */
+@interface AppController (Private)
+- (void)startGameIndex:(int)index;
+- (void)rebuildGamesMenu;
+- (int)defaultGameIndex;
+@end
 
 @implementation AppController
 
@@ -44,20 +52,56 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
     return [sub autorelease];
 }
 
+/* The New Game menu lists the games found on this machine, and a way to look again. */
+- (void)rebuildGamesMenu
+{
+    NSArray *old = [gamesMenu itemArray];
+    int i, found = 0;
+    unsigned k;
+
+    for (k = [old count]; k > 0; k--) [gamesMenu removeItem:[old objectAtIndex:k - 1]];
+    for (i = 0; i < hk_game_count(); i++) {
+        id item;
+        if (![GameConfig isInstalled:hk_game(i)]) continue;
+        item = [self addItem:[NSString stringWithFormat:@"%s%s", hk_game(i)->title, hk_game(i)->verified ? "" : " (untested)"]
+                      action:@selector(newGame:) key:@"" target:self toMenu:gamesMenu];
+        [item setTag:i];
+        found++;
+    }
+    if (found == 0) [self addItem:@"No games found" action:NULL key:@"" target:nil toMenu:gamesMenu];
+    [self addItem:@"Look for Games Again" action:@selector(rescanGames:) key:@"" target:self toMenu:gamesMenu];
+    if ([gamesMenu respondsToSelector:@selector(sizeToFit)]) [gamesMenu sizeToFit];
+}
+
+- (void)rescanGames:(id)sender
+{
+    [self rebuildGamesMenu];
+}
+
+/* The game to start when none is named: the one played last if it is installed, else the first that is; -1 if none is. */
+- (int)defaultGameIndex
+{
+    NSString *last = [GameConfig lastGameId];
+    int i;
+
+    if (last) {
+        const HkGameDef *g = hk_game_by_id(UI_CPATH(last));
+        if (g && [GameConfig isInstalled:g]) {
+            for (i = 0; i < hk_game_count(); i++) if (hk_game(i) == g) return i;
+        }
+    }
+    for (i = 0; i < hk_game_count(); i++) if ([GameConfig isInstalled:hk_game(i)]) return i;
+    return -1;
+}
+
 - (void)buildMenu
 {
     NSMenu *main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
-    NSMenu *m, *games;
-    int i;
+    NSMenu *m;
 
     m = [self submenuNamed:@"Game" inMenu:main];
-    games = [self submenuNamed:@"New Game" inMenu:m];
-    for (i = 0; i < hk_game_count(); i++) {
-        id item = [self addItem:[NSString stringWithFormat:@"%s%s", hk_game(i)->title, hk_game(i)->verified ? "" : " (untested)"]
-                         action:@selector(newGame:)
-                            key:@"" target:self toMenu:games];
-        [item setTag:i];
-    }
+    gamesMenu = [self submenuNamed:@"New Game" inMenu:m];
+    [self rebuildGamesMenu];
     [self addItem:@"New Game Again" action:@selector(newLastGame:) key:@"n" target:self toMenu:m];
     [self addItem:@"Options..." action:@selector(showOptions:) key:@"o" target:self toMenu:m];
     [self addItem:@"Scores..." action:@selector(showScores:) key:@"s" target:self toMenu:m];
@@ -129,9 +173,24 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
+    int first = [self defaultGameIndex];
     NSLog(@"StepHack: applicationDidFinishLaunching");
     SSTrace("applicationDidFinishLaunching");
-    [self newGame:nil];
+    if (first < 0) {
+        NSRunAlertPanel(@"StepHack", @"%@", @"OK", nil, nil,
+                        @"No game was found. Install one (its package puts the program in /usr/local/bin), or tell "
+                        @"Preferences where it is; the New Game menu lists the games that can be started.");
+        [self showPreferences:nil];
+        return;
+    }
+    lastGame = first;
+    [self startGameIndex:first];
+}
+
+/* Coming back to the application is when a package may have been installed meanwhile. */
+- (void)applicationDidBecomeActive:(NSNotification *)notification
+{
+    [self rebuildGamesMenu];
 }
 
 /* ---------------------------------------------------------------- */
@@ -145,6 +204,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
 
     if (!g) return;
     lastGame = index;
+    [GameConfig setLastGameId:[NSString stringWithCString:g->id]];
     s = [[GameSession alloc] initWithGame:g owner:self];
     if (![s startReportingTo:&why]) {
         NSRunAlertPanel([NSString stringWithCString:g->title], @"%@", @"OK", nil, nil,

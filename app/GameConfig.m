@@ -27,6 +27,26 @@
     return v ? v : [NSString stringWithCString:g->launcher];
 }
 
++ (BOOL)isInstalled:(const HkGameDef *)g
+{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *launcher = [self launcherForGame:g];
+    BOOL isDir = NO;
+    return [fm fileExistsAtPath:launcher isDirectory:&isDir] && !isDir && [fm isExecutableFileAtPath:launcher];
+}
+
++ (NSString *)lastGameId
+{
+    return [[NSUserDefaults standardUserDefaults] stringForKey:@"LastGame"];
+}
+
++ (void)setLastGameId:(NSString *)gid
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    [d setObject:gid forKey:@"LastGame"];
+    [d synchronize];
+}
+
 + (NSString *)hackdirForGame:(const HkGameDef *)g
 {
     NSString *v = [self stored:@"hackdir" game:g];

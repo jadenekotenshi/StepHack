@@ -8,7 +8,9 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 
 ## What it does
 
-- **Runs the game for you.** Pick a game from *Game > New Game*; StepHack starts the program on a pty with a terminal
+- **Runs the game for you.** Pick a game from *Game > New Game*, which lists the games found on this machine (it looks again
+  when you switch back to StepHack, after Preferences, or with *Look for Games Again*; at start-up it plays the one you played
+  last); StepHack starts the program on a pty with a terminal
   description it knows the window really supports (colours, cursor addressing, line drawing for `DECgraphics`).
 - **Number pad movement without a number pad.** The cursor keys move, Home / PgUp / End / PgDn are the four diagonals, and
   Shift runs. With the game's `number_pad` on these send the digits; with it off, the vi keys. The game needs no changes.

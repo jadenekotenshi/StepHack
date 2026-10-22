@@ -73,7 +73,17 @@ session-smoke:
 	$(CC) build/ss_*.o -framework Foundation -framework AppKit -o build/session_smoke
 	build/session_smoke
 
+# The New Game menu follows which games are installed (host only; links the whole application but main.m).
+menu-smoke:
+	mkdir -p build
+	for f in tests/menu_smoke.m $(filter-out app/main.m,$(wildcard app/*.m)); do \
+	  $(CC) -c -x objective-c -fno-objc-arc -w -g -Iterm -Icore -Iapp $$f -o build/ms_$$(basename $$f .m).o || exit 1; \
+	done
+	for f in term/*.c core/*.c; do $(CC) -c -w -g -Iterm -Icore $$f -o build/ms_c_$$(basename $$f .c).o || exit 1; done
+	$(CC) build/ms_*.o -framework Foundation -framework AppKit -o build/menu_smoke
+	build/menu_smoke
+
 clean:
 	rm -rf build
 
-.PHONY: all test lint check-objc runner-smoke ending-smoke session-smoke clean
+.PHONY: all test lint check-objc runner-smoke ending-smoke session-smoke menu-smoke clean

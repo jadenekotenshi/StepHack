@@ -4,6 +4,11 @@
 /* Where each game lives on this machine, as the user has set it (Preferences) or the OPENSTEP packages put it. */
 @interface GameConfig : NSObject
 + (NSString *)launcherForGame:(const HkGameDef *)g;
+/* True if the game's program exists where it is expected (Preferences, else the package's place) and can be run. */
++ (BOOL)isInstalled:(const HkGameDef *)g;
+/* The id of the game started last, remembered between runs (nil: none yet). */
++ (NSString *)lastGameId;
++ (void)setLastGameId:(NSString *)gid;
 + (NSString *)hackdirForGame:(const HkGameDef *)g;
 + (NSString *)rcPathForGame:(const HkGameDef *)g;
 + (NSString *)defaultRcPathForGame:(const HkGameDef *)g;     /* ignoring Preferences */

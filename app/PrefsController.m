@@ -167,6 +167,7 @@ static PrefsController *shared = nil;
 - (void)windowWillClose:(NSNotification *)notification
 {
     [self store];
+    if ([[NSApp delegate] respondsToSelector:@selector(rescanGames:)]) [[NSApp delegate] rescanGames:nil];     /* a path may have changed */
 }
 
 @end

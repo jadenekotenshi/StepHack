@@ -364,10 +364,9 @@ int hk_reap_child(int pid, int *status_out)
     NSString *hackdir = [GameConfig hackdirForGame:game];
     NSString *term;
     NSFileManager *fm = [NSFileManager defaultManager];
-    BOOL isDir = NO;
     char *launcherC, **env;
 
-    if (![fm fileExistsAtPath:launcher isDirectory:&isDir] || isDir || ![fm isExecutableFileAtPath:launcher]) {
+    if (![GameConfig isInstalled:game]) {
         if (why) *why = [NSString stringWithFormat:@"%s is not installed where Preferences says it is (%@). "
                          @"Install its package, or set the right path in Preferences.", game->title, launcher];
         return NO;
