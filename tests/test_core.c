@@ -381,33 +381,40 @@ static void test_commands(void)
 
 static void test_backup(void)
 {
-    char n[80];
-    int y, m, d;
+    char n[96];
+    int y, m, d, hh, mm;
     long a;
 
-    hkb_name(n, sizeof(n), "sysconf", 2026, 10, 22);
-    CHECK(strcmp(n, "sysconf.old.22Oct2026") == 0);
-    hkb_name(n, sizeof(n), "sysconf", 2026, 1, 5);
-    CHECK(strcmp(n, "sysconf.old.05Jan2026") == 0);
-    hkb_name(n, sizeof(n), "sysconf", 999, 12, 31);
-    CHECK(strcmp(n, "sysconf.old.31Dec0999") == 0);
-    hkb_name(n, sizeof(n), "sysconf", 2026, 10, 22);
-    CHECK(hkb_parse(n, "sysconf", &y, &m, &d) && y == 2026 && m == 10 && d == 22);
-    CHECK(hkb_parse("sysconf.old.01Feb2000", "sysconf", &y, &m, &d) && y == 2000 && m == 2 && d == 1);
+    hkb_name(n, sizeof(n), "sysconf", 2026, 10, 22, 14, 35);
+    CHECK(strcmp(n, "sysconf.old.22Oct2026.1435") == 0);
+    hkb_name(n, sizeof(n), "sysconf", 2026, 1, 5, 0, 7);
+    CHECK(strcmp(n, "sysconf.old.05Jan2026.0007") == 0);
+    hkb_name(n, sizeof(n), "sysconf", 999, 12, 31, 23, 59);
+    CHECK(strcmp(n, "sysconf.old.31Dec0999.2359") == 0);
+    hkb_name(n, sizeof(n), "sysconf", 2026, 10, 22, 14, 35);
+    CHECK(hkb_parse(n, "sysconf", &y, &m, &d, &hh, &mm) && y == 2026 && m == 10 && d == 22 && hh == 14 && mm == 35);
+    CHECK(hkb_parse("sysconf.old.22Oct2026.1435.gz", "sysconf", &y, &m, &d, &hh, &mm) && y == 2026 && d == 22 && hh == 14 && mm == 35);
+    CHECK(hkb_parse("sysconf.old.01Feb2000.0000", "sysconf", NULL, NULL, NULL, NULL, NULL));          /* outputs are optional */
     /* anything else is not a backup of this file */
-    CHECK(!hkb_parse("sysconf", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconf.old", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconf.old.22Oct26", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconf.old.22oct2026", "sysconf", &y, &m, &d));          /* months are written Oct */
-    CHECK(!hkb_parse("sysconf.old.22Xyz2026", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconf.old.32Oct2026", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconf.old.00Oct2026", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconf.old.22Oct2026x", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconf.old.22Oct20x6", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconf.old.2OOct2026", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("sysconfx.old.22Oct2026", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("other.old.22Oct2026", "sysconf", &y, &m, &d));
-    CHECK(!hkb_parse("", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.22Oct2026", "sysconf", &y, &m, &d, &hh, &mm));               /* no time: the old form */
+    CHECK(!hkb_parse("sysconf.old.22Oct2026.143", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.22Oct2026.2460", "sysconf", &y, &m, &d, &hh, &mm));          /* minute 60 */
+    CHECK(!hkb_parse("sysconf.old.22Oct2026.2400", "sysconf", &y, &m, &d, &hh, &mm));          /* hour 24 */
+    CHECK(!hkb_parse("sysconf.old.22Oct2026.1435.bz2", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.22Oct2026.1435.gzz", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.22Oct2026.14x5", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.22Oct26.1435", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.22oct2026.1435", "sysconf", &y, &m, &d, &hh, &mm));          /* months are written Oct */
+    CHECK(!hkb_parse("sysconf.old.22Xyz2026.1435", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.32Oct2026.1435", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.00Oct2026.1435", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.22Oct20x6.1435", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconf.old.22Oct2026-1435", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("sysconfx.old.22Oct2026.1435", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("other.old.22Oct2026.1435", "sysconf", &y, &m, &d, &hh, &mm));
+    CHECK(!hkb_parse("", "sysconf", &y, &m, &d, &hh, &mm));
     /* the day count: known dates, differences, and the round trip over a long span */
     CHECK(hkb_days(1970, 1, 1) == 0 && hkb_days(1970, 1, 2) == 1 && hkb_days(1969, 12, 31) == -1);
     CHECK(hkb_days(2000, 3, 1) - hkb_days(2000, 2, 28) == 2);                          /* 2000 is a leap year */

@@ -2,6 +2,8 @@
 #import "AppController.h"
 #import "GameConfig.h"
 #import "SysconfController.h"
+#import "ProcessRunner.h"
+#import "UIHelpers.h"
 #include "backup.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,6 +125,7 @@ int main(void)
         [@"# header\nWIZARDS=root games\n#SHELLERS=\nMAXPLAYERS=10\nSEDUCE=1\n" writeToFile:sysfile atomically:YES];
         CHECK([SysconfController hasSysconfForGame:nh]);
         CHECK(![SysconfController hasSysconfForGame:hk_game_by_id("slashem")]);   /* a game without one */
+        [SysconfController setBackupRoot:[dir stringByAppendingPathComponent:@"backups-first"]];       /* never the real ~/.StepHack */
         sysc = [SysconfController controllerForGame:nh];
         [sysc showWindow];
         CHECK([sysc isEditable]);
@@ -135,44 +138,70 @@ int main(void)
         got = [NSString stringWithContentsOfFile:sysfile];
         CHECK([got hasPrefix:@"# header\nWIZARDS=root games jade\n#SHELLERS=\nMAXPLAYERS=4\nSEDUCE=0\n"]);
         CHECK([got rangeOfString:@"SHELLERS=\nSHELLERS"].length == 0);
-        /* the save made a dated backup of the file as it was; a second save the same day leaves it alone */
+        /* the save made a dated, gzipped backup of the file as it was, in the backups directory (not beside the file) */
         {
             NSCalendarDate *nowd = [NSCalendarDate calendarDate];
+            NSString *broot = [dir stringByAppendingPathComponent:@"backups"], *bdir = [broot stringByAppendingPathComponent:@"nethack"];
+            NSArray *files;
+            NSString *first, *content;
             char bn[96];
             long today = hkb_days([nowd yearOfCommonEra], [nowd monthOfYear], [nowd dayOfMonth]);
-            NSString *bpath, *bgot;
-            int y, mo, da, k, ages[5] = { 40, 31, 30, 5, 0 };
+            int y, mo, da, k, ages[4] = { 40, 31, 30, 5 };
+            NSString *orig = @"# header\nWIZARDS=root games\n#SHELLERS=\nMAXPLAYERS=10\nSEDUCE=1\n";
+            NSString *gz = @"/usr/bin/gzip";
 
-            hkb_name(bn, sizeof(bn), "sysconf", [nowd yearOfCommonEra], [nowd monthOfYear], [nowd dayOfMonth]);
-            bpath = [dir stringByAppendingPathComponent:[NSString stringWithCString:bn]];
-            bgot = [NSString stringWithContentsOfFile:bpath];
-            CHECK(bgot != nil && [bgot isEqualToString:@"# header\nWIZARDS=root games\n#SHELLERS=\nMAXPLAYERS=10\nSEDUCE=1\n"]);
+            CHECK(sysc != nil);
+            /* (the first save above ran before the backups directory was redirected: do it again with the redirect) */
+            [SysconfController setBackupRoot:broot];
+            [orig writeToFile:sysfile atomically:YES];
+            [sysc revert:nil];
+            [sysc setValue:@"4" forKey:@"MAXPLAYERS"];
+            [sysc save:nil];
+            files = [fm directoryContentsAtPath:bdir];
+            CHECK([files count] == 1);
+            first = [files count] ? [files objectAtIndex:0] : @"";
+            CHECK([first hasPrefix:@"sysconf.old."] && [first hasSuffix:@".gz"] && hkb_parse(UI_CPATH(first), "sysconf", NULL, NULL, NULL, NULL, NULL));
+            CHECK(![fm fileExistsAtPath:[dir stringByAppendingPathComponent:first]]);              /* not next to the file */
+            CHECK([[fm directoryContentsAtPath:dir] indexOfObject:@"sysconf.old"] == NSNotFound);
+            content = [ProcessRunner outputOfProgram:gz arguments:[NSArray arrayWithObjects:@"-dc", [bdir stringByAppendingPathComponent:first], nil]
+                                             hackdir:dir game:nh seconds:10.0];
+            CHECK([content isEqualToString:orig]);                                                 /* a real gzip file with the old contents */
+            CHECK([[NSString stringWithContentsOfFile:sysfile] rangeOfString:@"MAXPLAYERS=4"].length > 0);
+
+            /* a second save in the same minute leaves that copy alone (a new minute just makes another) */
             [sysc setValue:@"5" forKey:@"MAXPLAYERS"];
             [sysc save:nil];
+            content = [ProcessRunner outputOfProgram:gz arguments:[NSArray arrayWithObjects:@"-dc", [bdir stringByAppendingPathComponent:first], nil]
+                                             hackdir:dir game:nh seconds:10.0];
+            CHECK([content isEqualToString:orig]);
             CHECK([[NSString stringWithContentsOfFile:sysfile] rangeOfString:@"MAXPLAYERS=5"].length > 0);
-            CHECK([[NSString stringWithContentsOfFile:bpath] isEqualToString:bgot]);            /* still the file as it was before the day's changes */
 
             /* clean up: older than 30 days goes (the date in the name decides), the rest and other files stay */
-            for (k = 0; k < 4; k++) {                                                          /* (ages[4] is today: the real backup) */
+            for (k = 0; k < 4; k++) {
                 hkb_civil(today - ages[k], &y, &mo, &da);
-                hkb_name(bn, sizeof(bn), "sysconf", y, mo, da);
-                [@"old" writeToFile:[dir stringByAppendingPathComponent:[NSString stringWithCString:bn]] atomically:YES];
+                hkb_name(bn, sizeof(bn), "sysconf", y, mo, da, 9, 5);
+                [@"old" writeToFile:[bdir stringByAppendingPathComponent:[NSString stringWithFormat:@"%s%s", bn, (k & 1) ? "" : ".gz"]]
+                         atomically:YES];                                                          /* gzipped and plain names both count */
             }
-            [@"x" writeToFile:[dir stringByAppendingPathComponent:@"sysconf.old.junk"] atomically:YES];
-            [@"x" writeToFile:[dir stringByAppendingPathComponent:@"other.old.01Jan2000"] atomically:YES];
+            [@"x" writeToFile:[bdir stringByAppendingPathComponent:@"sysconf.old.junk"] atomically:YES];
+            [@"x" writeToFile:[bdir stringByAppendingPathComponent:@"other.old.01Jan2000.0000.gz"] atomically:YES];
             CHECK([sysc countBackupsOlderThan:30] == 2);                                       /* 40 and 31 days, not 30 */
             CHECK([sysc countBackupsOlderThan:60] == 0 && [sysc countBackupsOlderThan:0] == 4);
             CHECK([sysc removeBackupsOlderThan:30] == 2);
             CHECK([sysc countBackupsOlderThan:30] == 0);
             hkb_civil(today - 31, &y, &mo, &da);
-            hkb_name(bn, sizeof(bn), "sysconf", y, mo, da);
-            CHECK(![fm fileExistsAtPath:[dir stringByAppendingPathComponent:[NSString stringWithCString:bn]]]);
+            hkb_name(bn, sizeof(bn), "sysconf", y, mo, da, 9, 5);
+            CHECK(![fm fileExistsAtPath:[bdir stringByAppendingPathComponent:[NSString stringWithCString:bn]]]);
             hkb_civil(today - 30, &y, &mo, &da);
-            hkb_name(bn, sizeof(bn), "sysconf", y, mo, da);
-            CHECK([fm fileExistsAtPath:[dir stringByAppendingPathComponent:[NSString stringWithCString:bn]]]);
-            CHECK([fm fileExistsAtPath:[dir stringByAppendingPathComponent:@"sysconf.old.junk"]]);
-            CHECK([fm fileExistsAtPath:[dir stringByAppendingPathComponent:@"other.old.01Jan2000"]]);
+            hkb_name(bn, sizeof(bn), "sysconf", y, mo, da, 9, 5);
+            {
+                NSString *gzname = [NSString stringWithFormat:@"%s.gz", bn];
+                CHECK([fm fileExistsAtPath:[bdir stringByAppendingPathComponent:gzname]]);
+            }
+            CHECK([fm fileExistsAtPath:[bdir stringByAppendingPathComponent:@"sysconf.old.junk"]]);
+            CHECK([fm fileExistsAtPath:[bdir stringByAppendingPathComponent:@"other.old.01Jan2000.0000.gz"]]);
             CHECK([GameConfig backupDays] == 30);                                              /* the default */
+            [SysconfController setBackupRoot:nil];
         }
         [sysc setValue:@"x" forKey:@"MAXPLAYERS"];                                 /* not a number: refused (no alert in a test: nothing written) */
         chmod([sysfile fileSystemRepresentation], 0444);                           /* read only: shown, not changed */

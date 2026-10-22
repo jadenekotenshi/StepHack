@@ -23,11 +23,14 @@
 - (void)save:(id)sender;
 - (void)revert:(id)sender;
 - (void)cleanUp:(id)sender;
-/* Each save first copies the file to sysconf.old.ddMMMyyyy beside it (the day's first copy is kept, so it is the file as it
- * was before that day's changes).  NO if the copy could not be made. */
+/* Each save first copies the file, gzipped, to <backups>/<game>/sysconf.old.ddMMMyyyy.hhmm.gz, where <backups> is
+ * ~/.StepHack/backups (the data directory is usually not the user's to write to).  A copy of the same minute is kept as it
+ * is.  Without a gzip program the copy is left uncompressed.  NO if the copy could not be made. */
 - (BOOL)backupFile;
+- (NSString *)backupDirectory;
 - (int)countBackupsOlderThan:(int)days;      /* backups whose date is more than days days ago */
 - (int)removeBackupsOlderThan:(int)days;     /* ... and deletes them; how many went */
++ (void)setBackupRoot:(NSString *)root;      /* instead of ~/.StepHack/backups (for the tests) */
 /* for the tests */
 - (BOOL)isEditable;
 - (void)setValue:(NSString *)value forKey:(NSString *)key;

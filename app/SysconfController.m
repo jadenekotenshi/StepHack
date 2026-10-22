@@ -1,6 +1,7 @@
 #import "SysconfController.h"
 #import "GameConfig.h"
 #import "UIHelpers.h"
+#import "ProcessRunner.h"
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -13,6 +14,7 @@
 #define ROW_H   54.0
 
 static NSMutableDictionary *controllers = nil;
+static NSString *backupRootOverride = nil;
 
 @interface SysconfController (Private)
 - (id)initForGame:(const HkGameDef *)g;
@@ -90,7 +92,8 @@ static BOOL user_in_group(const char *name)
 /* Why the file can or cannot be changed. */
 - (NSString *)explanation
 {
-    if (editable) return [NSString stringWithFormat:@"%@ -- you can change it.", path];
+    if (editable)
+        return [NSString stringWithFormat:@"%@ -- you can change it. A copy is kept in %@ before each save.", path, [self backupDirectory]];
     return [NSString stringWithFormat:@"%@ -- read only. It should belong to root and group wheel with mode 664 so that members "
             @"of wheel can edit it (as root: chgrp wheel and chmod 664 on it). You are %s group wheel.",
             path, user_in_group("wheel") ? "in" : "not in"];
@@ -189,57 +192,101 @@ static BOOL user_in_group(const char *name)
     }
 }
 
-/* ---- backups: sysconf.old.ddMMMyyyy beside the file ---- */
+/* ---- backups: ~/.StepHack/backups/<game>/sysconf.old.ddMMMyyyy.hhmm.gz ---- */
 
-- (NSString *)directory { return [path stringByDeletingLastPathComponent]; }
++ (void)setBackupRoot:(NSString *)root
+{
+    [backupRootOverride release];
+    backupRootOverride = [root retain];
+}
+
+/* Creates a directory and the ones above it that are missing (OpenStep's NSFileManager makes one level at a time). */
+static void make_directories(NSString *dir)
+{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    BOOL isDir = NO;
+    if ([dir length] < 2 || [fm fileExistsAtPath:dir isDirectory:&isDir]) return;
+    make_directories([dir stringByDeletingLastPathComponent]);
+    [fm createDirectoryAtPath:dir attributes:nil];
+}
+
+- (NSString *)backupDirectory
+{
+    NSString *root = backupRootOverride ? backupRootOverride
+                   : [[NSHomeDirectory() stringByAppendingPathComponent:@".StepHack"] stringByAppendingPathComponent:@"backups"];
+    return [root stringByAppendingPathComponent:[NSString stringWithCString:game->id]];
+}
+
+/* A gzip program, or nil. */
+static NSString *find_gzip(void)
+{
+    static const char *const where[] = { "/usr/local/bin/gzip", "/usr/bin/gzip", "/bin/gzip", NULL };
+    NSFileManager *fm = [NSFileManager defaultManager];
+    int i;
+    for (i = 0; where[i]; i++) {
+        NSString *p = [NSString stringWithCString:where[i]];
+        if ([fm isExecutableFileAtPath:p]) return p;
+    }
+    return nil;
+}
 
 - (BOOL)backupFile
 {
     NSCalendarDate *now = [NSCalendarDate calendarDate];
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *dir = [self backupDirectory], *plain, *gz, *gzip;
     char name[96];
-    NSString *backup;
     NSData *orig;
 
-    hkb_name(name, sizeof(name), game->sysconf, [now yearOfCommonEra], [now monthOfYear], [now dayOfMonth]);
-    backup = [[self directory] stringByAppendingPathComponent:[NSString stringWithCString:name]];
-    if ([[NSFileManager defaultManager] fileExistsAtPath:backup]) return YES;      /* the day's first copy stays */
+    hkb_name(name, sizeof(name), game->sysconf, [now yearOfCommonEra], [now monthOfYear], [now dayOfMonth],
+             [now hourOfDay], [now minuteOfHour]);
+    plain = [dir stringByAppendingPathComponent:[NSString stringWithCString:name]];
+    gz = [plain stringByAppendingString:@".gz"];
+    if ([fm fileExistsAtPath:gz] || [fm fileExistsAtPath:plain]) return YES;       /* this minute's copy is already there */
     orig = [NSData dataWithContentsOfFile:path];
     if (!orig) return NO;
-    return [orig writeToFile:backup atomically:NO];
+    make_directories(dir);
+    if (![orig writeToFile:plain atomically:NO]) return NO;
+    gzip = find_gzip();
+    if (gzip) {
+        [ProcessRunner outputOfProgram:gzip arguments:[NSArray arrayWithObjects:@"-f", plain, nil] hackdir:dir game:game
+                               seconds:20.0];
+        if (![fm fileExistsAtPath:gz]) return YES;                                  /* compressing failed: the plain copy stands */
+        if ([fm fileExistsAtPath:plain]) [fm removeFileAtPath:plain handler:nil];
+    }
+    return YES;
 }
 
-/* The backups of this file in its directory that are more than days old, as full paths. */
+/* The backups of this file that are more than days old, as full paths. */
 - (NSArray *)backupsOlderThan:(int)days
 {
     NSCalendarDate *now = [NSCalendarDate calendarDate];
     long today = hkb_days([now yearOfCommonEra], [now monthOfYear], [now dayOfMonth]);
-    NSArray *names = [[NSFileManager defaultManager] directoryContentsAtPath:[self directory]];
+    NSString *dir = [self backupDirectory];
+    NSArray *names = [[NSFileManager defaultManager] directoryContentsAtPath:dir];
     NSMutableArray *out = [NSMutableArray array];
     unsigned i;
 
     for (i = 0; i < [names count]; i++) {
         NSString *n = [names objectAtIndex:i];
         int y, m, d;
-        if (hkb_parse(UI_CPATH(n), game->sysconf, &y, &m, &d) && today - hkb_days(y, m, d) > days)
-            [out addObject:[[self directory] stringByAppendingPathComponent:n]];
+        if (hkb_parse(UI_CPATH(n), game->sysconf, &y, &m, &d, NULL, NULL) && today - hkb_days(y, m, d) > days)
+            [out addObject:[dir stringByAppendingPathComponent:n]];
     }
     return out;
 }
 
 - (int)countBackupsOlderThan:(int)days
 {
-    if (!path) [self loadFile];
     return (int)[[self backupsOlderThan:days] count];
 }
 
 - (int)removeBackupsOlderThan:(int)days
 {
-    NSArray *old;
+    NSArray *old = [self backupsOlderThan:days];
     unsigned i;
     int gone = 0;
 
-    if (!path) [self loadFile];
-    old = [self backupsOlderThan:days];
     for (i = 0; i < [old count]; i++)
         if ([[NSFileManager defaultManager] removeFileAtPath:[old objectAtIndex:i] handler:nil]) gone++;
     return gone;
@@ -272,8 +319,8 @@ static BOOL user_in_group(const char *name)
     gone = [self removeBackupsOlderThan:days];
     if (gone < count)
         NSRunAlertPanel(@"Clean Up", @"%@", @"OK", nil, nil,
-                        [NSString stringWithFormat:@"Deleted %d of %d. The rest could not be removed (the directory %@ may not be writable).",
-                         gone, count, [self directory]]);
+                        [NSString stringWithFormat:@"Deleted %d of %d. The rest could not be removed (see %@).",
+                         gone, count, [self backupDirectory]]);
 }
 
 /* Writes the file in place: its owner, group and mode stay as they are (a replacement file would belong to whoever saves). */
@@ -317,8 +364,8 @@ static BOOL user_in_group(const char *name)
     free(text);
     if (![self backupFile] &&
         NSRunAlertPanel(@"System Settings", @"%@", @"Save Anyway", @"Cancel", nil,
-                        [NSString stringWithFormat:@"A backup copy could not be made in %@ (the directory may not be writable "
-                         @"to you). Save without one?", [self directory]]) != NSAlertDefaultReturn) return;
+                        [NSString stringWithFormat:@"A backup copy could not be made in %@. Save without one?",
+                         [self backupDirectory]]) != NSAlertDefaultReturn) return;
     if (![data writeToFile:path atomically:NO])
         NSRunAlertPanel(@"System Settings", @"%@", @"OK", nil, nil, [NSString stringWithFormat:@"Could not write %@.", path]);
 }
