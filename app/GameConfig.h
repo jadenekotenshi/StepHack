@@ -6,6 +6,7 @@
 + (NSString *)launcherForGame:(const HkGameDef *)g;
 + (NSString *)hackdirForGame:(const HkGameDef *)g;
 + (NSString *)rcPathForGame:(const HkGameDef *)g;
++ (NSString *)defaultRcPathForGame:(const HkGameDef *)g;     /* ignoring Preferences */
 + (void)setPath:(NSString *)path forKey:(NSString *)key game:(const HkGameDef *)g;     /* key: launcher, hackdir, rc; "" restores the default */
 + (BOOL)defaultToNumberPad;                                                           /* add number_pad:1 to a run-commands file that doesn't set it */
 + (void)setDefaultToNumberPad:(BOOL)flag;

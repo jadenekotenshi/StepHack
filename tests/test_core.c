@@ -207,10 +207,10 @@ static void test_rc_robust(void)
 
 static void test_schema(void)
 {
-    const char *ids[] = { "nethack367", "slashem", "nethack5" };
+    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack" };
     int g, i, j;
 
-    for (g = 0; g < 3; g++) {
+    for (g = 0; g < 4; g++) {
         char *text = hks_builtin(ids[g]);
         HkSchema *s;
         int groups = 0, opts = 0;
@@ -238,7 +238,7 @@ static void test_schema(void)
             }
         }
         CHECK(groups >= 4 && opts >= 40);
-        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0));
+        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0));
         hks_free(s);
     }
     CHECK(hks_builtin("nosuch") == NULL);
@@ -354,7 +354,7 @@ static void test_xlog(void)
 
 static void test_commands(void)
 {
-    int i, j, mains[3] = { 0, 0, 0 };
+    int i, j, mains[16] = { 0 };
 
     CHECK(hk_command_count() >= 20);
     for (i = 0; i < hk_command_count(); i++) {
@@ -393,6 +393,12 @@ static void test_games(void)
     CHECK(strcmp(hk_game_by_id("slashem")->rcname, ".slashemrc") == 0);
     CHECK(strcmp(hk_game_by_id("nethack5")->launcher, "/usr/local/bin/nethack5") == 0 && hk_game_by_id("nethack5")->verified);
     CHECK(strcmp(hk_game_by_id("nethack5")->hackdir, "/usr/local/lib/nethack5dir") == 0);
+    {
+        const HkGameDef *sp = hk_game_by_id("sporkhack");
+        CHECK(sp != NULL && strcmp(sp->launcher, "/usr/local/bin/sporkhack") == 0 && strcmp(sp->hackdir, "/usr/local/lib/sporkhackdir") == 0);
+        CHECK(strcmp(sp->rcname, ".sporkrc") == 0 && strcmp(sp->rcname_alt, ".nethackrc") == 0 && strcmp(sp->term, "xterm") == 0);
+        CHECK(hk_game_by_id("nethack")->term == NULL && hk_game_by_id("nethack")->rcname_alt == NULL);
+    }
     CHECK(strcmp(hk_game_by_id("nethack")->line_option, "DECgraphics") == 0 && strcmp(hk_game_by_id("slashem")->line_option, "DECgraphics") == 0);
     /* the termcap entry must fit a classic environment variable and be well formed */
     CHECK(strlen(tc) < 1000);

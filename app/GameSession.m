@@ -369,7 +369,7 @@ int hk_reap_child(int pid, int *status_out)
 
     /* Everything the child needs is prepared before fork(): no Objective-C after it. */
     launcherC = hk_copy_c(UI_CPATH(launcher));
-    env = hk_game_environ(UI_CPATH(hackdir));
+    env = hk_game_environ(UI_CPATH(hackdir), game);
     if (!launcherC || !env) { if (why) *why = @"Out of memory."; return NO; }
 
     padMode = hk_pad_mode([GameConfig numberPadForGame:game]);

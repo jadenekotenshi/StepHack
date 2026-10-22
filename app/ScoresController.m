@@ -128,7 +128,7 @@ static NSMutableDictionary *controllers = nil;
     } else {
         NSArray *args = (source == SRC_ALL) ? [NSArray arrayWithObjects:@"-s", @"all", nil] : [NSArray arrayWithObject:@"-s"];
         NSString *out = [ProcessRunner outputOfProgram:[GameConfig launcherForGame:game] arguments:args
-                                               hackdir:[GameConfig hackdirForGame:game] seconds:8.0];
+                                               hackdir:[GameConfig hackdirForGame:game] game:game seconds:8.0];
         if (!out) return @"The game could not be run to read its score list.\n";
         if ([ui_trim(out) length] == 0) return @"The game printed no score list.\n";
         return out;

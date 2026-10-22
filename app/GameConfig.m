@@ -32,10 +32,25 @@
     return v ? v : [NSString stringWithCString:g->hackdir];
 }
 
+/* The file the game reads when nothing is set in Preferences: its usual name in the home directory, or, for a game that
+ * falls back to an older name, that file while the usual one does not exist. */
++ (NSString *)defaultRcPathForGame:(const HkGameDef *)g
+{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *main_ = [NSHomeDirectory() stringByAppendingPathComponent:[NSString stringWithCString:g->rcname]];
+    NSString *alt;
+
+    if (g->rcname_alt && ![fm fileExistsAtPath:main_]) {
+        alt = [NSHomeDirectory() stringByAppendingPathComponent:[NSString stringWithCString:g->rcname_alt]];
+        if ([fm fileExistsAtPath:alt]) return alt;
+    }
+    return main_;
+}
+
 + (NSString *)rcPathForGame:(const HkGameDef *)g
 {
     NSString *v = [self stored:@"rc" game:g];
-    return v ? v : [NSHomeDirectory() stringByAppendingPathComponent:[NSString stringWithCString:g->rcname]];
+    return v ? v : [self defaultRcPathForGame:g];
 }
 
 + (void)setPath:(NSString *)path forKey:(NSString *)key game:(const HkGameDef *)g

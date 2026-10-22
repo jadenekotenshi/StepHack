@@ -41,10 +41,12 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 | NetHack 3.6.7 | `/usr/local/bin/nethack` | `/usr/local/lib/nethackdir` | `~/.nethackrc` |
 | Slash'EM 0.0.7E7F3 | `/usr/local/bin/slashem` | `/usr/local/slashemdir` | `~/.slashemrc` |
 | NetHack 5.0 | `/usr/local/bin/nethack5` | `/usr/local/lib/nethack5dir` | `~/.nethackrc` |
+| SporkHack 0.6.5 | `/usr/local/bin/sporkhack` | `/usr/local/lib/sporkhackdir` | `~/.sporkrc` (`~/.nethackrc` while that is absent) |
 
 These are where the [openstep-pkg](https://github.com/jadenekotenshi/openstep-pkg) packages install them. All three
 locations can be changed in *Preferences*. More variants
-(NetHack 3.4.3, UnNetHack, SporkHack, EvilHack, SpliceHack) are planned.
+(NetHack 3.4.3, UnNetHack, EvilHack, SpliceHack) are planned. SporkHack is built on ncurses, so it is run under the stock
+`xterm` terminal description instead of StepHack's own termcap entry.
 
 ## Building
 

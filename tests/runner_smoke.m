@@ -19,22 +19,26 @@ int main(void)
     NSTimeInterval t0;
 
     o = [ProcessRunner outputOfProgram:@"/bin/sh" arguments:[NSArray arrayWithObjects:@"-c", @"echo hello; echo err 1>&2; echo \"$HACKDIR|$TERM\"", nil]
-                               hackdir:@"/tmp/hd" seconds:5.0];
+                               hackdir:@"/tmp/hd" game:hk_game_by_id("nethack") seconds:5.0];
     CHECK(o != nil && [o rangeOfString:@"hello\n"].length == 6);
     CHECK([o rangeOfString:@"err\n"].length == 4);                         /* stderr is captured too */
     CHECK([o rangeOfString:@"/tmp/hd|stephack"].length > 0);                /* the game environment */
 
+    o = [ProcessRunner outputOfProgram:@"/bin/sh" arguments:[NSArray arrayWithObjects:@"-c", @"echo \"$TERM|${TERMCAP-unset}\"", nil]
+                               hackdir:@"/tmp/hd" game:hk_game_by_id("sporkhack") seconds:5.0];
+    CHECK(o != nil && [o rangeOfString:@"xterm|unset"].length > 0);          /* a terminfo game: its own TERM, no TERMCAP */
+
     t0 = [NSDate timeIntervalSinceReferenceDate];
     o = [ProcessRunner outputOfProgram:@"/bin/sh" arguments:[NSArray arrayWithObjects:@"-c", @"echo first; sleep 30", nil]
-                               hackdir:@"/tmp" seconds:1.0];
+                               hackdir:@"/tmp" game:hk_game_by_id("nethack") seconds:1.0];
     CHECK(o != nil && [o rangeOfString:@"first"].length == 5);
     CHECK([NSDate timeIntervalSinceReferenceDate] - t0 < 5.0);               /* killed at the limit */
 
-    o = [ProcessRunner outputOfProgram:@"/nonexistent/program" arguments:nil hackdir:@"/tmp" seconds:2.0];
+    o = [ProcessRunner outputOfProgram:@"/nonexistent/program" arguments:nil hackdir:@"/tmp" game:hk_game_by_id("nethack") seconds:2.0];
     CHECK(o != nil && [o length] == 0);                                      /* exec failed: nothing printed */
 
     o = [ProcessRunner outputOfProgram:@"/bin/sh" arguments:[NSArray arrayWithObjects:@"-c", @"head -c 600000 /dev/zero | tr '\\0' x", nil]
-                               hackdir:@"/tmp" seconds:5.0];
+                               hackdir:@"/tmp" game:hk_game_by_id("nethack") seconds:5.0];
     CHECK(o != nil && [o length] <= 270000);                                 /* capped */
 
     printf("runner: %s\n", failures ? "FAILED" : "ok");

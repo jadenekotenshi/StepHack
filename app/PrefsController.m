@@ -89,9 +89,7 @@ static PrefsController *shared = nil;
     s = ui_trim([hackdirField stringValue]);
     [GameConfig setPath:[s isEqualToString:[NSString stringWithCString:g->hackdir]] ? @"" : s forKey:@"hackdir" game:g];
     s = ui_trim([rcField stringValue]);
-    [GameConfig setPath:[s isEqualToString:[[NSHomeDirectory() stringByAppendingPathComponent:
-                                                [NSString stringWithCString:g->rcname]] description]] ? @"" : s
-                 forKey:@"rc" game:g];
+    [GameConfig setPath:[s isEqualToString:[GameConfig defaultRcPathForGame:g]] ? @"" : s forKey:@"rc" game:g];
 }
 
 - (void)showWindow

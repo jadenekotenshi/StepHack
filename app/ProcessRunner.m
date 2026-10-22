@@ -26,7 +26,7 @@ extern int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds
 @implementation ProcessRunner
 
 + (NSString *)outputOfProgram:(NSString *)program arguments:(NSArray *)args hackdir:(NSString *)hackdir
-                      seconds:(double)limit
+                         game:(const HkGameDef *)game seconds:(double)limit
 {
     int fds[2], i, n = (int)[args count], status;
     char **argv, **env, *prog;
@@ -39,7 +39,7 @@ extern int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds
     /* Everything the child needs is prepared before fork(): no Objective-C after it. */
     prog = hk_copy_c(UI_CPATH(program));
     argv = (char **)malloc((size_t)(n + 2) * sizeof(char *));
-    env = hk_game_environ(UI_CPATH(hackdir));
+    env = hk_game_environ(UI_CPATH(hackdir), game);
     if (!prog || !argv || !env) return nil;
     argv[0] = prog;
     for (i = 0; i < n; i++) argv[i + 1] = hk_copy_c(UI_CPATH([args objectAtIndex:i]));
