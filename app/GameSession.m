@@ -556,16 +556,27 @@ int hk_reap_child(int pid, int *status_out)
     [timer invalidate];
     [timer release];
     timer = nil;
-    if (hk_reap_child(childPID, &status)) {
-        exitStatus = WIFEXITED(status) ? WEXITSTATUS(status)
-                   : WIFSIGNALED(status) ? 128 + WTERMSIG(status) : -1;
+    /* The pty can reach end-of-file a moment before the process is reapable: give it a little while. */
+    {
+        int tries, got = hk_reap_child(childPID, &status);
+        for (tries = 0; !got && tries < 10; tries++) {
+            usleep(20000);
+            got = hk_reap_child(childPID, &status);
+        }
+        if (got) exitStatus = WIFEXITED(status) ? WEXITSTATUS(status)
+                            : WIFSIGNALED(status) ? 128 + WTERMSIG(status) : -1;
     }
     if (masterFD >= 0) { close(masterFD); masterFD = -1; }
     [self saveEnding];
     if (rawLog) { fclose((FILE *)rawLog); rawLog = NULL; }
-    /* The window stays open (showing final scrollback) until the user closes it themselves --
-     * windowWillClose: is the only place that notifies owner, so it happens exactly once whether
-     * the shell exited first or the user just closed a still-running one. */
+    /* windowWillClose: is the only place that notifies owner, so it happens exactly once whether the game exited first or
+     * the user closed a still-running one.  A game that ended normally (status 0) takes its window with it -- what it
+     * left on the screen is kept (View Ending).  One that failed leaves the window open, showing its last words. */
+    if (exitStatus == 0 && [GameConfig closeWhenDone]) {
+        [termView flushDisplay];
+        [window close];
+        return;
+    }
     [window setTitle:[NSString stringWithFormat:@"%s (finished, status %d)", game->title, exitStatus]];
 }
 

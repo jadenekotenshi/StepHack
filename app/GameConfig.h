@@ -23,6 +23,9 @@
  * game that has a curses interface at all). */
 + (BOOL)useCursesForGame:(const HkGameDef *)g;
 + (void)setUseCurses:(int)choice forGame:(const HkGameDef *)g;       /* 1 yes, 0 no, -1 back to the game's default */
+/* Whether a game window closes by itself when its game ends normally (status 0); a failed one stays open to be read. */
++ (BOOL)closeWhenDone;
++ (void)setCloseWhenDone:(BOOL)flag;
 + (BOOL)defaultToLineGraphics;                                                        /* add DECgraphics to a file that sets no symbol set */
 + (void)setDefaultToLineGraphics:(BOOL)flag;
 

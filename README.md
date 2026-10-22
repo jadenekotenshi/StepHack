@@ -29,6 +29,8 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
   menu (Force, Untrap, Turn Undead, Offer, Sit, Ride, Wipe, Rub, Dip, Invoke, Jump, Monster, Adjust, Conduct, Discoveries,
   Look Here, Redraw) type the command for you. They send extended commands, which every version takes whatever the
   movement-key setting is, and only the ones the game has (no Overview for Slash'EM).
+- **The window closes with the game.** When a game ends normally (exit status 0) its window closes by itself; one that
+  fails (a missing library, a terminal error) stays open so you can read what it printed. *Preferences* has a switch.
 - **Endings.** When a game finishes, what it left on the screen (tombstone, final attributes and inventory, high scores) is
   saved as text under `~/.StepHack/endings` (the last 30 of each game). *Game > View Ending...* (Cmd-E) shows them; you can
   copy or save one.

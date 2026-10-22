@@ -174,6 +174,7 @@ int main(void)
     for (i = 0; i < 60 && [s isRunning]; i++) spin(0.05);
     CHECK(![s isRunning]);
     CHECK([s endingPath] != nil);
+    CHECK([owner ended]);                                                   /* a normal exit closed the window by itself */
     ending = [EndingStore textAtPath:[s endingPath]];
     CHECK(ending != nil && [ending rangeOfString:@"#pray"].length > 0);
     CHECK([[EndingStore pathsForGame:g] count] == 1);
@@ -187,6 +188,37 @@ int main(void)
     [s shutdown];
     [[s window] close];
     [s release];
+
+    /* how a game's end is handled: normal -> closes; failed -> stays open; preference off -> stays open */
+    {
+        struct { const char *body; BOOL closeWhenDone; BOOL expectClosed; const char *what; } cases[3] = {
+            { "#!/bin/sh\necho bye\nexit 0\n", YES, YES, "a game that exits normally closes its window" },
+            { "#!/bin/sh\necho it broke\nexit 3\n", YES, NO, "a game that fails leaves its window open" },
+            { "#!/bin/sh\necho bye\nexit 0\n", NO, NO, "with the preference off the window stays" }
+        };
+        int k;
+        for (k = 0; k < 3; k++) {
+            Owner *o2 = [[[Owner alloc] init] autorelease];
+            GameSession *s2;
+            NSString *l2 = [dir stringByAppendingPathComponent:@"endgame"];
+            [[NSString stringWithCString:cases[k].body] writeToFile:l2 atomically:YES];
+            chmod([l2 fileSystemRepresentation], 0755);
+            [GameConfig setPath:l2 forKey:@"launcher" game:g];
+            [GameConfig setCloseWhenDone:cases[k].closeWhenDone];
+            s2 = [[GameSession alloc] initWithGame:g owner:o2];
+            CHECK([s2 startReportingTo:&why]);
+            for (i = 0; i < 100 && [s2 isRunning]; i++) spin(0.05);
+            CHECK(![s2 isRunning]);
+            if (cases[k].expectClosed) CHECK([o2 ended]); else CHECK(![o2 ended]);
+            printf("  [status %d] ", [s2 exitStatus]);
+            printf("%s: %s\n", cases[k].what, ([o2 ended] == cases[k].expectClosed) ? "ok" : "FAILED");
+            if (k == 1) CHECK([s2 exitStatus] == 3);
+            [s2 shutdown];
+            [[s2 window] close];
+            [s2 release];
+        }
+        [GameConfig setCloseWhenDone:YES];
+    }
 
     [fm removeFileAtPath:dir handler:nil];
     [GameConfig setPath:@"" forKey:@"launcher" game:g];

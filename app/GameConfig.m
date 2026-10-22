@@ -6,6 +6,7 @@
 
 #define KEY_NUMPAD @"DefaultToNumberPad"
 #define KEY_LINES  @"DefaultToLineGraphics"
+#define KEY_CLOSE  @"CloseWhenDone"
 
 @implementation GameConfig
 
@@ -94,6 +95,19 @@
 {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     [d setBool:flag forKey:KEY_NUMPAD];
+    [d synchronize];
+}
+
++ (BOOL)closeWhenDone
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    return ([d objectForKey:KEY_CLOSE] == nil) ? YES : [d boolForKey:KEY_CLOSE];
+}
+
++ (void)setCloseWhenDone:(BOOL)flag
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    [d setBool:flag forKey:KEY_CLOSE];
     [d synchronize];
 }
 
