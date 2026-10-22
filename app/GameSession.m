@@ -6,6 +6,7 @@
 #import "EndingStore.h"
 #include "keymap.h"
 #include "commands.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>              /* posix_openpt/grantpt/unlockpt/ptsname on the host build */
 #include <errno.h>
@@ -201,6 +202,7 @@ int hk_reap_child(int pid, int *status_out)
     if (pending.p) free(pending.p);
     [window release]; [termView release]; [scroller release];
     [barControls release]; [moreCommands release]; [endingPath release];
+    if (rawLog) fclose((FILE *)rawLog);
     [super dealloc];
 }
 
@@ -491,6 +493,17 @@ int hk_reap_child(int pid, int *status_out)
 
     /* ---- parent ---- */
     childPID = pid;
+    /* A diagnostic: while ~/.StepHack.pty exists, every byte the game writes is also saved, untouched, in
+     * ~/.StepHack.ptylog (the file is started afresh for each game), so what a terminal problem really is can be seen. */
+    if ([fm fileExistsAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".StepHack.pty"]]) {
+        NSString *lp = [NSHomeDirectory() stringByAppendingPathComponent:@".StepHack.ptylog"];
+        rawLog = fopen(UI_CPATH(lp), "wb");
+        if (rawLog) {
+            fprintf((FILE *)rawLog, "# %s TERM=%s curses=%d cols=%d rows=%d\n", game->id,
+                    term ? UI_CPATH(term) : HK_TERM_NAME, usesCurses, initCols, initRows);
+            fflush((FILE *)rawLog);
+        }
+    }
     flags = fcntl(masterFD, F_GETFL, 0);
     fcntl(masterFD, F_SETFL, flags | O_NONBLOCK);
     state = GS_RUNNING;
@@ -517,6 +530,7 @@ int hk_reap_child(int pid, int *status_out)
         do {
             n = read(masterFD, buf, sizeof(buf));
             if (n > 0) {
+                if (rawLog) { fwrite(buf, 1, (size_t)n, (FILE *)rawLog); fflush((FILE *)rawLog); }
                 [termView writeBytes:buf length:n];
                 reads++;
             }
@@ -548,6 +562,7 @@ int hk_reap_child(int pid, int *status_out)
     }
     if (masterFD >= 0) { close(masterFD); masterFD = -1; }
     [self saveEnding];
+    if (rawLog) { fclose((FILE *)rawLog); rawLog = NULL; }
     /* The window stays open (showing final scrollback) until the user closes it themselves --
      * windowWillClose: is the only place that notifies owner, so it happens exactly once whether
      * the shell exited first or the user just closed a still-running one. */

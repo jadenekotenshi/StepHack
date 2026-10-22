@@ -58,6 +58,12 @@ locations can be changed in *Preferences*. More variants
 stock `xterm` terminal description instead of StepHack's own termcap entry; *Preferences* has a *Terminal* field to change
 that for any game (`stephack` selects StepHack's own entry).
 
+## Diagnosing terminal problems
+
+If a game draws wrongly, `touch ~/.StepHack.pty` and start the game: everything it writes is also saved, untouched, in
+`~/.StepHack.ptylog` (started afresh for each game; the first line says which `TERM` it ran under). Delete the flag file
+to stop. `touch ~/.StepHack.trace` additionally logs key events, as in the other apps.
+
 ## Building
 
 On a development machine (macOS or Linux), the portable part builds and its tests run:

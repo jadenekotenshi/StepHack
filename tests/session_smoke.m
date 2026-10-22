@@ -134,6 +134,11 @@ int main(void)
         [GameConfig setPath:@"" forKey:@"rc" game:u];
     }
 
+    NSString *flag = [NSHomeDirectory() stringByAppendingPathComponent:@".StepHack.pty"];
+    NSString *plog = [NSHomeDirectory() stringByAppendingPathComponent:@".StepHack.ptylog"];
+    BOOL hadFlag = [fm fileExistsAtPath:flag];
+    if (!hadFlag) [@"" writeToFile:flag atomically:YES];                          /* switch the raw log on for this test */
+
     s = [[GameSession alloc] initWithGame:g owner:owner];
     CHECK([s startReportingTo:&why]);
     tv = find_terminal([s window]);
@@ -173,6 +178,12 @@ int main(void)
     CHECK(ending != nil && [ending rangeOfString:@"#pray"].length > 0);
     CHECK([[EndingStore pathsForGame:g] count] == 1);
 
+    {
+        NSString *raw = [NSString stringWithContentsOfFile:plog];
+        CHECK(raw != nil && [raw hasPrefix:@"# nethack TERM=xterm curses=1 cols=110 rows=32\n"] && [raw rangeOfString:@"#pray"].length > 0);
+        if (!hadFlag) [fm removeFileAtPath:flag handler:nil];
+        [fm removeFileAtPath:plog handler:nil];
+    }
     [s shutdown];
     [[s window] close];
     [s release];

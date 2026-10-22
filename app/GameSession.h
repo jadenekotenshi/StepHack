@@ -31,6 +31,7 @@ enum { GS_RUNNING = 1, GS_ENDED };
     NSScroller    *scroller;
     NSMutableArray *barControls;       /* the command bar's buttons and menu, disabled when the game is over */
     NSMutableArray *moreCommands;      /* command indices behind the More menu's items */
+    void          *rawLog;             /* FILE * of everything the game wrote, while ~/.StepHack.pty exists (a diagnostic) */
     NSString      *endingPath;         /* where this game's ending was saved, once it is over */
 }
 - (id)initWithGame:(const HkGameDef *)aGame owner:(id)anOwner;
