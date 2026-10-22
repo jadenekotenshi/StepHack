@@ -47,6 +47,10 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
   games may run at once, seduction and the dump file. The file belongs to root and should be group-writable by wheel
   (`chgrp wheel` and `chmod 664` as root); the window changes it in place when you can write it, and otherwise shows it
   read-only and says why. Only the games that read a `sysconf` (NetHack 3.6.7, 5.0, EvilHack, SpliceHack) offer it.
+  Every save first copies the file to `sysconf.old.ddMMMyyyy` beside it (`sysconf.old.22Oct2026`; the day's first copy is
+  kept, so it is the file as it was before that day's changes), and *Clean Up...* deletes backups more than N days old
+  (30 unless you change it; the date in the name decides, not the file time). The copies are made in the game's data
+  directory, so that has to be writable to you as well; if not, the save asks whether to go on without a backup.
 - **Command bar.** A row of buttons under the game (Pray, Name, Call, Loot, Chat, Enhance, Overview, Attrib) and a *More*
   menu (Force, Untrap, Turn Undead, Offer, Sit, Ride, Wipe, Rub, Dip, Invoke, Jump, Monster, Adjust, Conduct, Discoveries,
   Look Here, Redraw) type the command for you. They send extended commands, which every version takes whatever the

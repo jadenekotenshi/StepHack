@@ -10,6 +10,7 @@
 #include "commands.h"
 #include "colours.h"
 #include "sysconf.h"
+#include "backup.h"
 
 static int bytes_are(const unsigned char *got, int n, const char *want)
 {
@@ -378,6 +379,50 @@ static void test_commands(void)
         }
 }
 
+static void test_backup(void)
+{
+    char n[80];
+    int y, m, d;
+    long a;
+
+    hkb_name(n, sizeof(n), "sysconf", 2026, 10, 22);
+    CHECK(strcmp(n, "sysconf.old.22Oct2026") == 0);
+    hkb_name(n, sizeof(n), "sysconf", 2026, 1, 5);
+    CHECK(strcmp(n, "sysconf.old.05Jan2026") == 0);
+    hkb_name(n, sizeof(n), "sysconf", 999, 12, 31);
+    CHECK(strcmp(n, "sysconf.old.31Dec0999") == 0);
+    hkb_name(n, sizeof(n), "sysconf", 2026, 10, 22);
+    CHECK(hkb_parse(n, "sysconf", &y, &m, &d) && y == 2026 && m == 10 && d == 22);
+    CHECK(hkb_parse("sysconf.old.01Feb2000", "sysconf", &y, &m, &d) && y == 2000 && m == 2 && d == 1);
+    /* anything else is not a backup of this file */
+    CHECK(!hkb_parse("sysconf", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf.old", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf.old.22Oct26", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf.old.22oct2026", "sysconf", &y, &m, &d));          /* months are written Oct */
+    CHECK(!hkb_parse("sysconf.old.22Xyz2026", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf.old.32Oct2026", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf.old.00Oct2026", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf.old.22Oct2026x", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf.old.22Oct20x6", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconf.old.2OOct2026", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("sysconfx.old.22Oct2026", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("other.old.22Oct2026", "sysconf", &y, &m, &d));
+    CHECK(!hkb_parse("", "sysconf", &y, &m, &d));
+    /* the day count: known dates, differences, and the round trip over a long span */
+    CHECK(hkb_days(1970, 1, 1) == 0 && hkb_days(1970, 1, 2) == 1 && hkb_days(1969, 12, 31) == -1);
+    CHECK(hkb_days(2000, 3, 1) - hkb_days(2000, 2, 28) == 2);                          /* 2000 is a leap year */
+    CHECK(hkb_days(1900, 3, 1) - hkb_days(1900, 2, 28) == 1);                          /* 1900 is not */
+    CHECK(hkb_days(2026, 10, 22) - hkb_days(2026, 9, 22) == 30);
+    CHECK(hkb_days(2027, 1, 1) - hkb_days(2026, 1, 1) == 365);
+    CHECK(hkb_days(2026, 10, 22) == 20748);
+    for (a = -800000L; a < 800000L; a += 37) {
+        hkb_civil(a, &y, &m, &d);
+        if (hkb_days(y, m, d) != a || m < 1 || m > 12 || d < 1 || d > 31) { CHECK(0); break; }
+    }
+    hkb_civil(20748, &y, &m, &d);
+    CHECK(y == 2026 && m == 10 && d == 22);
+}
+
 static void test_sysconf(void)
 {
     const char *text =
@@ -574,6 +619,7 @@ int main(void)
     test_commands();
     test_colours();
     test_sysconf();
+    test_backup();
     test_schema_apply();
     TEST_DONE("core");
 }

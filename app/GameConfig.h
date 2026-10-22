@@ -41,6 +41,9 @@
 /* What closing the window of a game in progress does: 0 saves the game (the default), 1 asks first. */
 + (int)closeAction;
 + (void)setCloseAction:(int)action;
+/* How old (in days) a backup of the system configuration file has to be before "Clean Up" offers to delete it (default 30). */
++ (int)backupDays;
++ (void)setBackupDays:(int)days;
 + (BOOL)defaultToLineGraphics;                                                        /* add DECgraphics to a file that sets no symbol set */
 + (void)setDefaultToLineGraphics:(BOOL)flag;
 

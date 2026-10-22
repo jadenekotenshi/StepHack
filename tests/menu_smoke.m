@@ -2,6 +2,7 @@
 #import "AppController.h"
 #import "GameConfig.h"
 #import "SysconfController.h"
+#include "backup.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -134,6 +135,45 @@ int main(void)
         got = [NSString stringWithContentsOfFile:sysfile];
         CHECK([got hasPrefix:@"# header\nWIZARDS=root games jade\n#SHELLERS=\nMAXPLAYERS=4\nSEDUCE=0\n"]);
         CHECK([got rangeOfString:@"SHELLERS=\nSHELLERS"].length == 0);
+        /* the save made a dated backup of the file as it was; a second save the same day leaves it alone */
+        {
+            NSCalendarDate *nowd = [NSCalendarDate calendarDate];
+            char bn[96];
+            long today = hkb_days([nowd yearOfCommonEra], [nowd monthOfYear], [nowd dayOfMonth]);
+            NSString *bpath, *bgot;
+            int y, mo, da, k, ages[5] = { 40, 31, 30, 5, 0 };
+
+            hkb_name(bn, sizeof(bn), "sysconf", [nowd yearOfCommonEra], [nowd monthOfYear], [nowd dayOfMonth]);
+            bpath = [dir stringByAppendingPathComponent:[NSString stringWithCString:bn]];
+            bgot = [NSString stringWithContentsOfFile:bpath];
+            CHECK(bgot != nil && [bgot isEqualToString:@"# header\nWIZARDS=root games\n#SHELLERS=\nMAXPLAYERS=10\nSEDUCE=1\n"]);
+            [sysc setValue:@"5" forKey:@"MAXPLAYERS"];
+            [sysc save:nil];
+            CHECK([[NSString stringWithContentsOfFile:sysfile] rangeOfString:@"MAXPLAYERS=5"].length > 0);
+            CHECK([[NSString stringWithContentsOfFile:bpath] isEqualToString:bgot]);            /* still the file as it was before the day's changes */
+
+            /* clean up: older than 30 days goes (the date in the name decides), the rest and other files stay */
+            for (k = 0; k < 4; k++) {                                                          /* (ages[4] is today: the real backup) */
+                hkb_civil(today - ages[k], &y, &mo, &da);
+                hkb_name(bn, sizeof(bn), "sysconf", y, mo, da);
+                [@"old" writeToFile:[dir stringByAppendingPathComponent:[NSString stringWithCString:bn]] atomically:YES];
+            }
+            [@"x" writeToFile:[dir stringByAppendingPathComponent:@"sysconf.old.junk"] atomically:YES];
+            [@"x" writeToFile:[dir stringByAppendingPathComponent:@"other.old.01Jan2000"] atomically:YES];
+            CHECK([sysc countBackupsOlderThan:30] == 2);                                       /* 40 and 31 days, not 30 */
+            CHECK([sysc countBackupsOlderThan:60] == 0 && [sysc countBackupsOlderThan:0] == 4);
+            CHECK([sysc removeBackupsOlderThan:30] == 2);
+            CHECK([sysc countBackupsOlderThan:30] == 0);
+            hkb_civil(today - 31, &y, &mo, &da);
+            hkb_name(bn, sizeof(bn), "sysconf", y, mo, da);
+            CHECK(![fm fileExistsAtPath:[dir stringByAppendingPathComponent:[NSString stringWithCString:bn]]]);
+            hkb_civil(today - 30, &y, &mo, &da);
+            hkb_name(bn, sizeof(bn), "sysconf", y, mo, da);
+            CHECK([fm fileExistsAtPath:[dir stringByAppendingPathComponent:[NSString stringWithCString:bn]]]);
+            CHECK([fm fileExistsAtPath:[dir stringByAppendingPathComponent:@"sysconf.old.junk"]]);
+            CHECK([fm fileExistsAtPath:[dir stringByAppendingPathComponent:@"other.old.01Jan2000"]]);
+            CHECK([GameConfig backupDays] == 30);                                              /* the default */
+        }
         [sysc setValue:@"x" forKey:@"MAXPLAYERS"];                                 /* not a number: refused (no alert in a test: nothing written) */
         chmod([sysfile fileSystemRepresentation], 0444);                           /* read only: shown, not changed */
         [sysc revert:nil];
@@ -143,6 +183,7 @@ int main(void)
         CHECK([[NSString stringWithContentsOfFile:sysfile] rangeOfString:@"nobody"].length == 0);
         chmod([sysfile fileSystemRepresentation], 0644);
         [GameConfig setPath:@"" forKey:@"hackdir" game:nh];
+        [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"SysconfBackupDays"];
     }
 
     /* installed means a runnable file, not a directory or a plain file */

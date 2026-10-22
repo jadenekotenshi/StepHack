@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <grp.h>
 #include <sys/param.h>
+#include "backup.h"
 
 #define WIN_W   560.0
 #define ROW_H   54.0
@@ -99,7 +100,7 @@ static BOOL user_in_group(const char *name)
 {
     NSView *v;
     int i, n = hksc_key_count();
-    float total = 70.0 + n * ROW_H + 16.0, y;
+    float total = 70.0 + n * ROW_H + 16.0 + 36.0, y;
 
     window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, WIN_W, total + 40.0)
                                          styleMask:(NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask)
@@ -129,6 +130,12 @@ static BOOL user_in_group(const char *name)
         [v addSubview:ui_wrapping_label([NSString stringWithCString:k->help], NSMakeRect(156, y + 2, WIN_W - 172.0, 22), NO)];
     }
 
+    [v addSubview:ui_label(@"Delete backups older than", NSMakeRect(16, 54, 170, 18))];
+    daysField = ui_field(NSMakeRect(190, 52, 44, 22));
+    [v addSubview:daysField];
+    [v addSubview:ui_label(@"days", NSMakeRect(240, 54, 40, 18))];
+    [v addSubview:ui_button(@"Clean Up...", NSMakeRect(290, 50, 100, 26), self, @selector(cleanUp:))];
+
     saveButton = ui_button(@"Save", NSMakeRect(WIN_W - 104, 12, 88, 26), self, @selector(save:));
     [v addSubview:saveButton];
     [v addSubview:ui_button(@"Revert", NSMakeRect(WIN_W - 200, 12, 88, 26), self, @selector(revert:))];
@@ -150,6 +157,7 @@ static BOOL user_in_group(const char *name)
         [ctl setEnabled:editable];
     }
     [saveButton setEnabled:editable];
+    [daysField setStringValue:[NSString stringWithFormat:@"%d", [GameConfig backupDays]]];
     [statusLabel setStringValue:[self explanation]];
 }
 
@@ -179,6 +187,93 @@ static BOOL user_in_group(const char *name)
             else [ctl setStringValue:value];
         }
     }
+}
+
+/* ---- backups: sysconf.old.ddMMMyyyy beside the file ---- */
+
+- (NSString *)directory { return [path stringByDeletingLastPathComponent]; }
+
+- (BOOL)backupFile
+{
+    NSCalendarDate *now = [NSCalendarDate calendarDate];
+    char name[96];
+    NSString *backup;
+    NSData *orig;
+
+    hkb_name(name, sizeof(name), game->sysconf, [now yearOfCommonEra], [now monthOfYear], [now dayOfMonth]);
+    backup = [[self directory] stringByAppendingPathComponent:[NSString stringWithCString:name]];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:backup]) return YES;      /* the day's first copy stays */
+    orig = [NSData dataWithContentsOfFile:path];
+    if (!orig) return NO;
+    return [orig writeToFile:backup atomically:NO];
+}
+
+/* The backups of this file in its directory that are more than days old, as full paths. */
+- (NSArray *)backupsOlderThan:(int)days
+{
+    NSCalendarDate *now = [NSCalendarDate calendarDate];
+    long today = hkb_days([now yearOfCommonEra], [now monthOfYear], [now dayOfMonth]);
+    NSArray *names = [[NSFileManager defaultManager] directoryContentsAtPath:[self directory]];
+    NSMutableArray *out = [NSMutableArray array];
+    unsigned i;
+
+    for (i = 0; i < [names count]; i++) {
+        NSString *n = [names objectAtIndex:i];
+        int y, m, d;
+        if (hkb_parse(UI_CPATH(n), game->sysconf, &y, &m, &d) && today - hkb_days(y, m, d) > days)
+            [out addObject:[[self directory] stringByAppendingPathComponent:n]];
+    }
+    return out;
+}
+
+- (int)countBackupsOlderThan:(int)days
+{
+    if (!path) [self loadFile];
+    return (int)[[self backupsOlderThan:days] count];
+}
+
+- (int)removeBackupsOlderThan:(int)days
+{
+    NSArray *old;
+    unsigned i;
+    int gone = 0;
+
+    if (!path) [self loadFile];
+    old = [self backupsOlderThan:days];
+    for (i = 0; i < [old count]; i++)
+        if ([[NSFileManager defaultManager] removeFileAtPath:[old objectAtIndex:i] handler:nil]) gone++;
+    return gone;
+}
+
+- (void)cleanUp:(id)sender
+{
+    const char *txt = UI_CPATH(ui_trim([daysField stringValue])), *p;
+    int days = 0, count, gone;
+
+    for (p = txt; *p; p++) {
+        if (*p < '0' || *p > '9') { days = -1; break; }
+        days = days * 10 + (*p - '0');
+        if (days > 100000) break;
+    }
+    if (days < 0 || txt[0] == '\0') {
+        NSRunAlertPanel(@"Clean Up", @"%@", @"OK", nil, nil, @"Enter the age in days as a whole number.");
+        return;
+    }
+    [GameConfig setBackupDays:days];
+    count = [self countBackupsOlderThan:days];
+    if (count == 0) {
+        NSRunAlertPanel(@"Clean Up", @"%@", @"OK", nil, nil,
+                        [NSString stringWithFormat:@"There are no backups of %s more than %d days old.", game->sysconf, days]);
+        return;
+    }
+    if (NSRunAlertPanel(@"Clean Up", @"%@", @"Delete", @"Cancel", nil,
+                        [NSString stringWithFormat:@"Delete %d backup%s of %s more than %d days old?", count,
+                         count == 1 ? "" : "s", game->sysconf, days]) != NSAlertDefaultReturn) return;
+    gone = [self removeBackupsOlderThan:days];
+    if (gone < count)
+        NSRunAlertPanel(@"Clean Up", @"%@", @"OK", nil, nil,
+                        [NSString stringWithFormat:@"Deleted %d of %d. The rest could not be removed (the directory %@ may not be writable).",
+                         gone, count, [self directory]]);
 }
 
 /* Writes the file in place: its owner, group and mode stay as they are (a replacement file would belong to whoever saves). */
@@ -220,6 +315,10 @@ static BOOL user_in_group(const char *name)
     if (!text) return;
     data = [NSData dataWithBytes:text length:len];
     free(text);
+    if (![self backupFile] &&
+        NSRunAlertPanel(@"System Settings", @"%@", @"Save Anyway", @"Cancel", nil,
+                        [NSString stringWithFormat:@"A backup copy could not be made in %@ (the directory may not be writable "
+                         @"to you). Save without one?", [self directory]]) != NSAlertDefaultReturn) return;
     if (![data writeToFile:path atomically:NO])
         NSRunAlertPanel(@"System Settings", @"%@", @"OK", nil, nil, [NSString stringWithFormat:@"Could not write %@.", path]);
 }

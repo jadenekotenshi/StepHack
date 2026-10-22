@@ -169,6 +169,19 @@
     [d synchronize];
 }
 
++ (int)backupDays
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    return ([d objectForKey:@"SysconfBackupDays"] == nil) ? 30 : [d integerForKey:@"SysconfBackupDays"];
+}
+
++ (void)setBackupDays:(int)days
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    [d setInteger:(days < 0 ? 0 : days) forKey:@"SysconfBackupDays"];
+    [d synchronize];
+}
+
 + (BOOL)defaultToLineGraphics
 {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];

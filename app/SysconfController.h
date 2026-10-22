@@ -14,6 +14,7 @@
     NSMutableArray  *controls;         /* one control per key of hksc_key() */
     NSTextField     *statusLabel;
     NSButton        *saveButton;
+    NSTextField     *daysField;        /* "delete backups older than N days" */
     BOOL             editable;
 }
 + (SysconfController *)controllerForGame:(const HkGameDef *)g;
@@ -21,6 +22,12 @@
 - (void)showWindow;
 - (void)save:(id)sender;
 - (void)revert:(id)sender;
+- (void)cleanUp:(id)sender;
+/* Each save first copies the file to sysconf.old.ddMMMyyyy beside it (the day's first copy is kept, so it is the file as it
+ * was before that day's changes).  NO if the copy could not be made. */
+- (BOOL)backupFile;
+- (int)countBackupsOlderThan:(int)days;      /* backups whose date is more than days days ago */
+- (int)removeBackupsOlderThan:(int)days;     /* ... and deletes them; how many went */
 /* for the tests */
 - (BOOL)isEditable;
 - (void)setValue:(NSString *)value forKey:(NSString *)key;
