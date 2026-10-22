@@ -6,10 +6,15 @@
 
 void SSTraceV(NSString *path, const char *fmt, va_list ap)
 {
+    static NSTimeInterval first = 0.0;
     FILE *f = fopen([path cString], "r+");      /* "r+" never creates the file: tracing is opt-in */
+    NSTimeInterval now;
 
     if (f == NULL) return;
+    now = [NSDate timeIntervalSinceReferenceDate];
+    if (first == 0.0) first = now;
     fseek(f, 0L, SEEK_END);
+    fprintf(f, "[+%7.2fs] ", now - first);       /* seconds since the first line: a stall or a kill shows up as a gap */
     vfprintf(f, fmt, ap);
     fputc('\n', f);
     fclose(f);                                  /* closed every time so a crash keeps earlier lines */
