@@ -63,6 +63,8 @@ int main(void)
 
     app = [[[AppController alloc] init] autorelease];
     [app buildMenu];
+    CHECK([[[NSApp mainMenu] itemArray] count] == 1);                      /* before the application runs: just Quit */
+    [app buildFullMenu];
     games = submenu(submenu([NSApp mainMenu], @"Game"), @"New Game");
     CHECK(games != nil);
     CHECK([[games itemArray] count] == 0);                                  /* nothing is looked up while the menus are built */

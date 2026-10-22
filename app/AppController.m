@@ -14,6 +14,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 /* gcc 2.7.2 does not look ahead within an @implementation, so anything called before its definition must be declared. */
 @interface AppController (Private)
 - (void)startGameIndex:(int)index;
+- (void)buildFullMenu;
 - (void)startGameIndex:(int)index mode:(int)mode;
 - (void)rebuildGamesMenu;
 - (void)addModeMenus;
@@ -115,17 +116,28 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     return -1;
 }
 
+/* What goes up before the application runs: a main menu with Quit and nothing else.  A launch from Workspace is waiting for
+ * the application to start running, and on a slow machine the many menu items of the real menu, made first, were enough to
+ * make it give up; the real menus are built in applicationDidFinishLaunching. */
 - (void)buildMenu
+{
+    NSMenu *main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
+    id item = [main addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"];
+    [item setTarget:NSApp];
+    SSTrace("buildMenu: minimal menu");
+    [NSApp setMainMenu:main];
+}
+
+- (void)buildFullMenu
 {
     NSMenu *main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
     NSMenu *m;
 
-    SSTrace("buildMenu: start");
+    SSTrace("buildFullMenu: start");
     m = [self submenuNamed:@"Game" inMenu:main];
     gameMenu = m;
-    SSTrace("buildMenu: the Game menu exists");
+    SSTrace("buildFullMenu: the Game menu exists");
     gamesMenu = [self submenuNamed:@"New Game" inMenu:m];
-    SSTrace("buildMenu: the New Game menu exists (it is filled, and the wizard and explore mode ones added, once the application is running)");
     [self addItem:@"New Game Again" action:@selector(newLastGame:) key:@"n" target:self toMenu:m];
     [self addItem:@"Options..." action:@selector(showOptions:) key:@"o" target:self toMenu:m];
     [[self addItem:@"System Settings..." action:@selector(showSysconf:) key:@"" target:self toMenu:m] setTag:TAG_SYSCONF];
@@ -143,7 +155,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     [[self addItem:@"Letter keys, y and z swapped" action:@selector(setKeypad:) key:@"" target:self toMenu:keypadMenu]
         setTag:TAG_PAD_QWERTZ];
 
-    SSTrace("buildMenu: Game menu done");
+    SSTrace("buildFullMenu: Game menu done");
     m = [self submenuNamed:@"Edit" inMenu:main];
     [self addItem:@"Copy" action:@selector(copy:) key:@"c" target:nil toMenu:m];
     [self addItem:@"Paste" action:@selector(paste:) key:@"v" target:nil toMenu:m];
@@ -163,9 +175,9 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     [self addItem:@"Hide" action:@selector(hide:) key:@"h" target:NSApp toMenu:main];
     [self addItem:@"Quit" action:@selector(terminate:) key:@"q" target:NSApp toMenu:main];
 
-    SSTrace("buildMenu: setting the main menu");
+    SSTrace("buildFullMenu: setting the main menu");
     [NSApp setMainMenu:main];
-    SSTrace("buildMenu: done");
+    SSTrace("buildFullMenu: done");
 }
 
 /* The frontmost game window's session, or nil. */
@@ -224,9 +236,12 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
-    int first = [self defaultGameIndex];
+    int first;
     NSLog(@"StepHack: applicationDidFinishLaunching");
     launched = YES;
+    SSTrace("applicationDidFinishLaunching: building the menus");
+    [self buildFullMenu];
+    first = [self defaultGameIndex];
     [self addModeMenus];
     SSTrace("applicationDidFinishLaunching: filling the game menus");
     [self rebuildGamesMenu];

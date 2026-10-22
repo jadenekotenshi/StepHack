@@ -12,7 +12,8 @@
     BOOL            launched;          /* the application is running: until then no menu item looks at the disk or the preferences */
     NSMenu         *gamesMenu;         /* the New Game submenu: only the games that are installed */
 }
-- (void)buildMenu;
+- (void)buildMenu;                      /* before the application runs: only a minimal menu (Quit), quickly */
+- (void)buildFullMenu;                  /* the real menus, once the application is running */
 - (void)newGame:(id)sender;
 - (void)coloursChanged:(id)sender;     /* Preferences changed the terminal colours: open windows follow */
 - (void)addModeMenus;                  /* the wizard and explore mode submenus, made once the application runs */
