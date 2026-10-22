@@ -56,7 +56,7 @@
 + (NSString *)termForGame:(const HkGameDef *)g curses:(BOOL)curses
 {
     NSString *v = [self stored:@"term" game:g];
-    if (v) return [v isEqualToString:@HK_TERM_NAME] ? nil : v;
+    if (v) return [v isEqualToString:[NSString stringWithCString:HK_TERM_NAME]] ? nil : v;
     if (g->term) return [NSString stringWithCString:g->term];
     return curses ? @"xterm" : nil;
 }

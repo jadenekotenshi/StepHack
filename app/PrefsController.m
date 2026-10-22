@@ -82,7 +82,7 @@ static PrefsController *shared = nil;
     [launcherField setStringValue:[GameConfig launcherForGame:g]];
     [hackdirField setStringValue:[GameConfig hackdirForGame:g]];
     [rcField setStringValue:[GameConfig rcPathForGame:g]];
-    [termField setStringValue:[GameConfig termForGame:g] ? [GameConfig termForGame:g] : @HK_TERM_NAME];
+    [termField setStringValue:[GameConfig termForGame:g] ? [GameConfig termForGame:g] : [NSString stringWithCString:HK_TERM_NAME]];
     [padSwitch setState:[GameConfig defaultToNumberPad] ? NSOnState : NSOffState];
     [lineSwitch setState:[GameConfig defaultToLineGraphics] ? NSOnState : NSOffState];
     [cursesSwitch setState:[GameConfig useCursesForGame:g] ? NSOnState : NSOffState];
@@ -102,7 +102,7 @@ static PrefsController *shared = nil;
     s = ui_trim([rcField stringValue]);
     [GameConfig setPath:[s isEqualToString:[GameConfig defaultRcPathForGame:g]] ? @"" : s forKey:@"rc" game:g];
     s = ui_trim([termField stringValue]);
-    [GameConfig setPath:[s isEqualToString:g->term ? [NSString stringWithCString:g->term] : @HK_TERM_NAME] ? @"" : s
+    [GameConfig setPath:[s isEqualToString:g->term ? [NSString stringWithCString:g->term] : [NSString stringWithCString:HK_TERM_NAME]] ? @"" : s
                  forKey:@"term" game:g];
 }
 
