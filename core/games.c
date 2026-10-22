@@ -11,6 +11,16 @@ static const HkGameDef GAMES[] = {
     { "splicehack","SpliceHack 1.2.0","/usr/local/bin/splicehack","/usr/local/lib/splicehackdir",".splicehackrc",NULL,         NULL,                  "splicehack", "DECgraphics", 0, HK_FAMILY_36 | HK_FAMILY_50, HK_CURSES_SYMSET, 1, "xterm" }
 };
 
+const char *hk_mode_arg(int mode)
+{
+    return mode == HK_MODE_WIZARD ? "-D" : mode == HK_MODE_EXPLORE ? "-X" : NULL;
+}
+
+const char *hk_mode_name(int mode)
+{
+    return mode == HK_MODE_WIZARD ? "wizard mode" : mode == HK_MODE_EXPLORE ? "explore mode" : "";
+}
+
 int hk_game_count(void) { return (int)(sizeof(GAMES) / sizeof(GAMES[0])); }
 
 const HkGameDef *hk_game(int index)

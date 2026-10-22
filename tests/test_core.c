@@ -435,6 +435,9 @@ static void test_colours(void)
 
 static void test_games(void)
 {
+    CHECK(hk_mode_arg(HK_MODE_NORMAL) == NULL && strcmp(hk_mode_arg(HK_MODE_WIZARD), "-D") == 0 && strcmp(hk_mode_arg(HK_MODE_EXPLORE), "-X") == 0);
+    CHECK(hk_mode_name(HK_MODE_NORMAL)[0] == '\0' && strcmp(hk_mode_name(HK_MODE_WIZARD), "wizard mode") == 0);
+    CHECK(hk_mode_arg(99) == NULL);
     const char *tc = hk_termcap_entry();
     int i;
 

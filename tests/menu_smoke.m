@@ -87,6 +87,22 @@ int main(void)
     t = titles(games);
     CHECK([t count] == 3 && !has(t, @"Slash'EM"));
 
+    /* the same games, started in wizard or explore mode: tags carry the mode */
+    {
+        NSMenu *wiz = submenu(submenu([NSApp mainMenu], @"Game"), @"New Wizard Mode Game");
+        NSMenu *exp = submenu(submenu([NSApp mainMenu], @"Game"), @"New Explore Mode Game");
+        NSArray *wt, *et;
+        CHECK(wiz != nil && exp != nil);
+        wt = titles(wiz); et = titles(exp);
+        CHECK([wt count] == 2 && [et count] == 2 && has(wt, @"NetHack 3.6.7") && has(et, @"UnNetHack"));   /* the two installed; no "look again" item here */
+        CHECK([[[wiz itemArray] objectAtIndex:0] tag] == 0 + 256 * HK_MODE_WIZARD);
+        {
+            int un = 0, j;
+            for (j = 0; j < hk_game_count(); j++) if (hk_game(j) == hk_game_by_id("unnethack")) un = j;
+            CHECK([[[exp itemArray] objectAtIndex:1] tag] == un + 256 * HK_MODE_EXPLORE);
+        }
+    }
+
     /* installed means a runnable file, not a directory or a plain file */
     [@"text" writeToFile:[dir stringByAppendingPathComponent:@"plain"] atomically:YES];
     [GameConfig setPath:[dir stringByAppendingPathComponent:@"plain"] forKey:@"launcher" game:hk_game_by_id("slashem")];

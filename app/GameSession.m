@@ -71,6 +71,8 @@
 - (void)flushPending;
 - (void)buildCommandBarIn:(NSView *)container width:(float)width;
 - (void)saveEnding;
+- (NSString *)baseTitle;
+- (void)closingTick;
 - (void)terminalView:(id)tv sendBytes:(const unsigned char *)bytes length:(int)n;
 @end
 
@@ -210,6 +212,14 @@ int hk_reap_child(int pid, int *status_out)
 - (BOOL)isRunning { return state == GS_RUNNING; }
 - (int)exitStatus { return exitStatus; }
 - (const HkGameDef *)game { return game; }
+- (void)setPlayMode:(int)mode { playMode = (mode == HK_MODE_WIZARD || mode == HK_MODE_EXPLORE) ? mode : HK_MODE_NORMAL; }
+
+/* The window title: the game, and the mode when it is not an ordinary game. */
+- (NSString *)baseTitle
+{
+    if (playMode == HK_MODE_NORMAL) return [NSString stringWithCString:game->title];
+    return [NSString stringWithFormat:@"%s (%s)", game->title, hk_mode_name(playMode)];
+}
 - (NSString *)endingPath { return endingPath; }
 - (int)padMode { return padMode; }
 
@@ -272,7 +282,7 @@ int hk_reap_child(int pid, int *status_out)
     [self applyColours];
     [termView setLocalScrollKeys:NO];                  /* Shift-PgUp/PgDn run northeast/southeast in a game */
     [termView setScroller:scroller];
-    [window setTitle:[NSString stringWithCString:game->title]];
+    [window setTitle:[self baseTitle]];
     [window setFrameTopLeftPoint:NSMakePoint(scr.origin.x + 60 + offset, NSMaxY(scr) - 40 - offset)];
     offset += 24.0;
     if (offset > 240.0) offset = 0.0;
@@ -374,7 +384,7 @@ int hk_reap_child(int pid, int *status_out)
     NSString *hackdir = [GameConfig hackdirForGame:game];
     NSString *term;
     NSFileManager *fm = [NSFileManager defaultManager];
-    char *launcherC, **env;
+    char *launcherC, **env, *argv[3];
 
     if (![GameConfig isInstalled:game]) {
         if (why) *why = [NSString stringWithFormat:@"%s is not installed where Preferences says it is (%@). "
@@ -388,6 +398,9 @@ int hk_reap_child(int pid, int *status_out)
 
     /* Everything the child needs is prepared before fork(): no Objective-C after it. */
     launcherC = hk_copy_c(UI_CPATH(launcher));
+    argv[0] = launcherC;
+    argv[1] = hk_mode_arg(playMode) ? hk_copy_c(hk_mode_arg(playMode)) : (char *)0;     /* -D or -X; the launcher passes it on */
+    argv[2] = (char *)0;
     env = hk_game_environ(UI_CPATH(hackdir), term ? UI_CPATH(term) : NULL);
     if (!launcherC || !env) { if (why) *why = @"Out of memory."; return NO; }
 
@@ -496,7 +509,7 @@ int hk_reap_child(int pid, int *status_out)
             extern char **environ;
             environ = env;
         }
-        execl(launcherC, launcherC, (char *)NULL);
+        execv(launcherC, argv);
         _exit(127);                                            /* exec failed */
     }
 
@@ -526,6 +539,7 @@ int hk_reap_child(int pid, int *status_out)
     unsigned char buf[16384];
     int n;
 
+    if (state == GS_CLOSING) { [self closingTick]; return; }
     if (state != GS_RUNNING) return;
     [self flushPending];
     hk_reap_pending();                 /* opportunistic: keeps the shared cache fresh for whoever
@@ -586,7 +600,7 @@ int hk_reap_child(int pid, int *status_out)
         [window close];
         return;
     }
-    [window setTitle:[NSString stringWithFormat:@"%s (finished, status %d)", game->title, exitStatus]];
+    [window setTitle:[NSString stringWithFormat:@"%@ (finished, status %d)", [self baseTitle], exitStatus]];
 }
 
 /* What the game left on the screen -- the tombstone, the final attributes, the high scores -- is kept as text, and the
@@ -602,15 +616,74 @@ int hk_reap_child(int pid, int *status_out)
     endingPath = [[EndingStore saveText:t forGame:game] retain];
 }
 
-- (void)shutdown
+- (void)stopPolling
 {
-    if (state != GS_RUNNING) return;
-    state = GS_ENDED;
     [timer invalidate];
     [timer release];
     timer = nil;
+}
+
+/* Closing the window of a game in progress: the game is told to hang up, which every *hack answers by saving the game
+ * and exiting.  The pty stays open, and polled, until it has gone (so that nothing it writes while saving fails), and it is
+ * killed only if it is still there after thirty seconds. */
+- (void)shutdown
+{
+    if (state != GS_RUNNING) return;
+    if (discardOnClose) { [self abandon]; return; }
     if (childPID > 0) kill(childPID, SIGHUP);
+    state = GS_CLOSING;
+    closeDeadline = [NSDate timeIntervalSinceReferenceDate] + 30.0;
+    if (!timer)                                                   /* (a session that never got as far as polling) */
+        timer = [[NSTimer scheduledTimerWithTimeInterval:TICK_SECONDS target:self
+                                                selector:@selector(tick:) userInfo:nil repeats:YES] retain];
+}
+
+- (void)abandon
+{
+    if (state != GS_RUNNING && state != GS_CLOSING) return;
+    state = GS_ENDED;
+    [self stopPolling];
+    if (childPID > 0) { int st; kill(childPID, SIGKILL); (void)hk_reap_child(childPID, &st); }
     if (masterFD >= 0) { close(masterFD); masterFD = -1; }
+}
+
+/* While a closed game saves: its output is read and thrown away; when it is gone (or too slow), everything is released. */
+- (void)closingTick
+{
+    unsigned char buf[4096];
+    int n, done = 0, st;
+
+    hk_reap_pending();
+    do {
+        n = read(masterFD, buf, sizeof(buf));
+    } while (n == (int)sizeof(buf));
+    if (n == 0 || (n < 0 && errno == EIO)) done = 1;
+    if (!done && hk_reap_child(childPID, &st)) done = 1;
+    if (!done && [NSDate timeIntervalSinceReferenceDate] > closeDeadline) {
+        kill(childPID, SIGKILL);
+        done = 1;
+    }
+    if (!done) return;
+    {
+        int k;                                                    /* collect it, if it has not been already */
+        for (k = 0; k < 10 && !hk_reap_child(childPID, &st); k++) usleep(20000);
+    }
+    state = GS_ENDED;
+    [self stopPolling];
+    if (masterFD >= 0) { close(masterFD); masterFD = -1; }
+}
+
+/* Asked first, if Preferences says so: Save (the default), Close Without Saving (the game is lost), or Cancel. */
+- (BOOL)windowShouldClose:(id)sender
+{
+    int answer;
+    if (state != GS_RUNNING || [GameConfig closeAction] != 1) return YES;
+    answer = NSRunAlertPanel(@"Close this game?", @"%@", @"Save and Close", @"Close Without Saving", @"Cancel",
+                             [NSString stringWithFormat:@"%@ is in progress. Save and Close keeps it for next time; "
+                              @"Close Without Saving abandons it.", [self baseTitle]]);
+    if (answer == NSAlertDefaultReturn) return YES;
+    if (answer == NSAlertAlternateReturn) { discardOnClose = 1; return YES; }
+    return NO;
 }
 
 /* ---------------------------------------------------------------- */

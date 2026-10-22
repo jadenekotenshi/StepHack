@@ -7,7 +7,7 @@
  * general sbuf StepSSH's protocol code needs (SSH wire-format framing), so not copied over. */
 typedef struct { unsigned char *p; size_t len, cap; } pty_pending;
 
-enum { GS_RUNNING = 1, GS_ENDED };
+enum { GS_RUNNING = 1, GS_ENDED, GS_CLOSING };    /* CLOSING: the window is gone, the game was told to hang up (and save) and is being waited for */
 
 /* One game window: the window and its TerminalView, a pty pair, a forked child running the game on the slave
  * side, and a 20ms poll loop reading the master side into the view.  Derived from StepTTY's PTYSession (one class
@@ -23,6 +23,9 @@ enum { GS_RUNNING = 1, GS_ENDED };
     id             owner;
     const HkGameDef *game;
     int            usesCurses;         /* the game runs with its curses interface: a larger window */
+    int            playMode;           /* HK_MODE_* */
+    int            discardOnClose;     /* closing the window abandons the game instead of saving it */
+    NSTimeInterval closeDeadline;      /* a closing game that is still there at this time is killed */
     int            padMode;            /* HK_PAD_*: how the cursor keys are turned into movement */
     pty_pending    pending;            /* bytes not yet accepted by a non-blocking write() */
 
@@ -40,6 +43,8 @@ enum { GS_RUNNING = 1, GS_ENDED };
  * for the caller to show.  why may be NULL. */
 - (BOOL)startReportingTo:(NSString **)why;
 - (const HkGameDef *)game;
+- (void)setPlayMode:(int)mode;              /* before -start...: HK_MODE_WIZARD runs the game with -D, HK_MODE_EXPLORE with -X */
+- (void)abandon;                           /* kills the game at once, unsaved (for "Close Without Saving") */
 - (int)padMode;
 - (BOOL)usesCurses;
 - (NSString *)endingPath;            /* the saved ending screen once the game is over, else nil */

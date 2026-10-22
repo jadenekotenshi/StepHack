@@ -209,6 +209,59 @@ int main(void)
     [[s window] close];
     [s release];
 
+    /* play modes: the launcher is given -D or -X, and the title says so */
+    {
+        int modes[3] = { HK_MODE_NORMAL, HK_MODE_WIZARD, HK_MODE_EXPLORE };
+        const char *want[3] = { "[]", "[-D]", "[-X]" };
+        int k;
+        for (k = 0; k < 3; k++) {
+            Owner *o3 = [[[Owner alloc] init] autorelease];
+            GameSession *s3;
+            NSString *l3 = [dir stringByAppendingPathComponent:@"modegame"], *argfile = [dir stringByAppendingPathComponent:@"args"], *got;
+            [[NSString stringWithFormat:@"#!/bin/sh\necho \"[$@]\" > %@\nexec cat\n", argfile] writeToFile:l3 atomically:YES];
+            chmod([l3 fileSystemRepresentation], 0755);
+            [fm removeFileAtPath:argfile handler:nil];
+            [GameConfig setPath:l3 forKey:@"launcher" game:g];
+            s3 = [[GameSession alloc] initWithGame:g owner:o3];
+            [s3 setPlayMode:modes[k]];
+            CHECK([s3 startReportingTo:&why]);
+            for (i = 0; i < 100 && ![fm fileExistsAtPath:argfile]; i++) spin(0.05);
+            got = [NSString stringWithContentsOfFile:argfile];
+            CHECK(got != nil && [got hasPrefix:[NSString stringWithCString:want[k]]]);
+            if (k == 1) CHECK([[[s3 window] title] rangeOfString:@"wizard mode"].length > 0);
+            if (k == 0) CHECK([[[s3 window] title] rangeOfString:@"mode"].length == 0);
+            [s3 abandon];
+            [[s3 window] close];
+            [s3 release];
+        }
+    }
+
+    /* closing the window of a game in progress hangs it up (the game saves) and waits for it; abandoning kills it */
+    {
+        NSString *hup = [dir stringByAppendingPathComponent:@"hupgame"], *saved = [dir stringByAppendingPathComponent:@"saved"];
+        int round;
+        [[NSString stringWithFormat:@"#!/bin/sh\ntrap 'sleep 0.3; echo saved > %@; exit 0' HUP\nwhile :; do sleep 0.1; done\n", saved]
+            writeToFile:hup atomically:YES];
+        chmod([hup fileSystemRepresentation], 0755);
+        [GameConfig setPath:hup forKey:@"launcher" game:g];
+        for (round = 0; round < 2; round++) {                              /* 0: close (saves), 1: abandon (does not) */
+            Owner *o4 = [[[Owner alloc] init] autorelease];
+            GameSession *s4;
+            [fm removeFileAtPath:saved handler:nil];
+            s4 = [[GameSession alloc] initWithGame:g owner:o4];
+            CHECK([s4 startReportingTo:&why]);
+            spin(0.4);                                                      /* the shell has set its trap */
+            CHECK([s4 isRunning]);
+            if (round == 0) { [[s4 window] close]; CHECK([o4 ended]); }
+            else { [s4 abandon]; [[s4 window] close]; }
+            CHECK(![s4 isRunning]);
+            for (i = 0; i < 100 && ![fm fileExistsAtPath:saved]; i++) spin(0.05);
+            if (round == 0) CHECK([fm fileExistsAtPath:saved]); else CHECK(![fm fileExistsAtPath:saved]);
+            spin(0.5);                                                      /* the closing session finishes by itself */
+            [s4 release];
+        }
+    }
+
     /* how a game's end is handled: normal -> closes; failed -> stays open; preference off -> stays open */
     {
         struct { const char *body; BOOL closeWhenDone; BOOL expectClosed; const char *what; } cases[3] = {

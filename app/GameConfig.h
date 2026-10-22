@@ -38,6 +38,9 @@
 /* How bold text is drawn: 0 the font's bold face if it has one (else overstrike), 1 overstrike, 2 only brighter colour. */
 + (int)boldStyle;
 + (void)setBoldStyle:(int)style;
+/* What closing the window of a game in progress does: 0 saves the game (the default), 1 asks first. */
++ (int)closeAction;
++ (void)setCloseAction:(int)action;
 + (BOOL)defaultToLineGraphics;                                                        /* add DECgraphics to a file that sets no symbol set */
 + (void)setDefaultToLineGraphics:(BOOL)flag;
 

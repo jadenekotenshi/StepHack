@@ -34,6 +34,14 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
 - **Bold text.** *Preferences > Bold text* chooses how bold is drawn: the font's own bold face when it has one of the same
   width (the default), overstrike (the glyph drawn twice a point apart, which suits a bitmap font but smears an outline
   one, and curses games print inventory letters in bold), or only a brighter colour.
+- **Closing a game saves it.** Closing the window of a game in progress tells the game to hang up, which every *hack answers
+  by saving and exiting; StepHack keeps the terminal open until the game has gone (and kills it only after thirty
+  seconds). *Preferences > Closing a game* can make it ask first: *Save and Close*, *Close Without Saving* (the game is
+  lost) or *Cancel*.
+- **Wizard and explore mode.** *Game > New Wizard Mode Game* and *New Explore Mode Game* start any installed game with its
+  `-D` or `-X` option (the window title says so). Explore mode is open to everyone; a game may refuse wizard mode to a user
+  it has not been told about (NetHack 3.6 and later list them as `WIZARDS=` in the `sysconf` file in the game's data
+  directory) -- the refusal stays in the window, which is not closed for a failed game.
 - **Command bar.** A row of buttons under the game (Pray, Name, Call, Loot, Chat, Enhance, Overview, Attrib) and a *More*
   menu (Force, Untrap, Turn Undead, Offer, Sit, Ride, Wipe, Rub, Dip, Invoke, Jump, Monster, Adjust, Conduct, Discoveries,
   Look Here, Redraw) type the command for you. They send extended commands, which every version takes whatever the

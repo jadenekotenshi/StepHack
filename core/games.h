@@ -34,6 +34,11 @@ typedef struct {
     const char *term;           /* TERM for a game built on ncurses/terminfo, which cannot use the stephack termcap entry; NULL: use it */
 } HkGameDef;
 
+/* How a game is started: normally, in wizard (debug) mode, or in explore (non-scoring) mode.  The mode is the game's -D or -X. */
+enum { HK_MODE_NORMAL = 0, HK_MODE_WIZARD = 1, HK_MODE_EXPLORE = 2, HK_MODES };
+const char       *hk_mode_arg(int mode);        /* "-D", "-X", or NULL for a normal game */
+const char       *hk_mode_name(int mode);       /* "wizard mode", "explore mode", or "" */
+
 int               hk_game_count(void);
 const HkGameDef  *hk_game(int index);                 /* NULL if out of range */
 const HkGameDef  *hk_game_by_id(const char *id);

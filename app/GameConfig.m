@@ -157,6 +157,18 @@
     [d synchronize];
 }
 
++ (int)closeAction
+{
+    return ([[NSUserDefaults standardUserDefaults] integerForKey:@"CloseAction"] == 1) ? 1 : 0;
+}
+
++ (void)setCloseAction:(int)action
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    [d setInteger:(action == 1 ? 1 : 0) forKey:@"CloseAction"];
+    [d synchronize];
+}
+
 + (BOOL)defaultToLineGraphics
 {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];

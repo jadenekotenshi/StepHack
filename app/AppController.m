@@ -13,7 +13,9 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
 /* gcc 2.7.2 does not look ahead within an @implementation, so anything called before its definition must be declared. */
 @interface AppController (Private)
 - (void)startGameIndex:(int)index;
+- (void)startGameIndex:(int)index mode:(int)mode;
 - (void)rebuildGamesMenu;
+- (void)fillGamesMenu:(NSMenu *)menu mode:(int)mode;
 - (int)defaultGameIndex;
 @end
 
@@ -53,24 +55,35 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
 }
 
 /* The New Game menu lists the games found on this machine, and a way to look again. */
-- (void)rebuildGamesMenu
+/* Menu item tags: a game's index in the table plus 256 times its play mode. */
+#define TAG_MODE_SHIFT 256
+
+- (void)fillGamesMenu:(NSMenu *)menu mode:(int)mode
 {
-    NSArray *old = [gamesMenu itemArray];
+    NSArray *old = [menu itemArray];
     int i, found = 0;
     unsigned k;
 
-    for (k = [old count]; k > 0; k--) [gamesMenu removeItem:[old objectAtIndex:k - 1]];
+    for (k = [old count]; k > 0; k--) [menu removeItem:[old objectAtIndex:k - 1]];
     for (i = 0; i < hk_game_count(); i++) {
         id item;
         if (![GameConfig isInstalled:hk_game(i)]) continue;
         item = [self addItem:[NSString stringWithFormat:@"%s%s", hk_game(i)->title, hk_game(i)->verified ? "" : " (untested)"]
-                      action:@selector(newGame:) key:@"" target:self toMenu:gamesMenu];
-        [item setTag:i];
+                      action:@selector(newGame:) key:@"" target:self toMenu:menu];
+        [item setTag:i + TAG_MODE_SHIFT * mode];
         found++;
     }
-    if (found == 0) [self addItem:@"No games found" action:NULL key:@"" target:nil toMenu:gamesMenu];
-    [self addItem:@"Look for Games Again" action:@selector(rescanGames:) key:@"" target:self toMenu:gamesMenu];
-    if ([gamesMenu respondsToSelector:@selector(sizeToFit)]) [gamesMenu sizeToFit];
+    if (found == 0) [self addItem:@"No games found" action:NULL key:@"" target:nil toMenu:menu];
+    if (mode == HK_MODE_NORMAL) [self addItem:@"Look for Games Again" action:@selector(rescanGames:) key:@"" target:self toMenu:menu];
+    if ([menu respondsToSelector:@selector(sizeToFit)]) [menu sizeToFit];
+}
+
+/* The New Game menus list the games found on this machine, and (the first) a way to look again. */
+- (void)rebuildGamesMenu
+{
+    [self fillGamesMenu:gamesMenu mode:HK_MODE_NORMAL];
+    [self fillGamesMenu:wizardMenu mode:HK_MODE_WIZARD];
+    [self fillGamesMenu:exploreMenu mode:HK_MODE_EXPLORE];
 }
 
 - (void)coloursChanged:(id)sender
@@ -107,6 +120,8 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
 
     m = [self submenuNamed:@"Game" inMenu:main];
     gamesMenu = [self submenuNamed:@"New Game" inMenu:m];
+    wizardMenu = [self submenuNamed:@"New Wizard Mode Game" inMenu:m];
+    exploreMenu = [self submenuNamed:@"New Explore Mode Game" inMenu:m];
     [self rebuildGamesMenu];
     [self addItem:@"New Game Again" action:@selector(newLastGame:) key:@"n" target:self toMenu:m];
     [self addItem:@"Options..." action:@selector(showOptions:) key:@"o" target:self toMenu:m];
@@ -204,6 +219,11 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
 
 - (void)startGameIndex:(int)index
 {
+    [self startGameIndex:index mode:HK_MODE_NORMAL];
+}
+
+- (void)startGameIndex:(int)index mode:(int)mode
+{
     const HkGameDef *g = hk_game(index);
     GameSession *s;
     NSString *why = nil;
@@ -212,6 +232,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
     lastGame = index;
     [GameConfig setLastGameId:[NSString stringWithCString:g->id]];
     s = [[GameSession alloc] initWithGame:g owner:self];
+    [s setPlayMode:mode];
     if (![s startReportingTo:&why]) {
         NSRunAlertPanel([NSString stringWithCString:g->title], @"%@", @"OK", nil, nil,
                         why ? why : @"The game could not be started.");
@@ -224,8 +245,8 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ };
 
 - (void)newGame:(id)sender
 {
-    int index = (sender && [sender respondsToSelector:@selector(tag)]) ? [sender tag] : lastGame;
-    [self startGameIndex:index];
+    int tag = (sender && [sender respondsToSelector:@selector(tag)]) ? [sender tag] : lastGame;
+    [self startGameIndex:tag % TAG_MODE_SHIFT mode:tag / TAG_MODE_SHIFT];
 }
 
 - (void)newLastGame:(id)sender

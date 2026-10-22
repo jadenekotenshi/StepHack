@@ -7,6 +7,7 @@
     NSMutableArray *sessions;          /* GameSession* */
     int             lastGame;          /* index into the game table of the last one started */
     NSMenu         *keypadMenu;
+    NSMenu         *wizardMenu, *exploreMenu;   /* the same games, started in wizard or explore mode */
     NSMenu         *gamesMenu;         /* the New Game submenu: only the games that are installed */
 }
 - (void)buildMenu;
