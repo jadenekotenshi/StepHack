@@ -25,7 +25,7 @@
 - (void)cleanUp:(id)sender;
 /* Each save first copies the file, gzipped, to <backups>/<game>/sysconf.old.ddMMMyyyy.hhmm.gz, where <backups> is
  * ~/.StepHack/backups (the data directory is usually not the user's to write to).  A copy of the same minute is kept as it
- * is.  Without a gzip program the copy is left uncompressed.  NO if the copy could not be made. */
+ * is.  Compressed with /usr/bin/gzip; left uncompressed if that is missing.  NO if the copy could not be made. */
 - (BOOL)backupFile;
 - (NSString *)backupDirectory;
 - (int)countBackupsOlderThan:(int)days;      /* backups whose date is more than days days ago */

@@ -217,17 +217,12 @@ static void make_directories(NSString *dir)
     return [root stringByAppendingPathComponent:[NSString stringWithCString:game->id]];
 }
 
-/* A gzip program, or nil. */
+/* The system's own gzip, which every OPENSTEP install has (and any newer gzip can unpack what it writes); nil if it is not
+ * there, in which case the backup is left uncompressed. */
 static NSString *find_gzip(void)
 {
-    static const char *const where[] = { "/usr/local/bin/gzip", "/usr/bin/gzip", "/bin/gzip", NULL };
-    NSFileManager *fm = [NSFileManager defaultManager];
-    int i;
-    for (i = 0; where[i]; i++) {
-        NSString *p = [NSString stringWithCString:where[i]];
-        if ([fm isExecutableFileAtPath:p]) return p;
-    }
-    return nil;
+    NSString *p = @"/usr/bin/gzip";
+    return [[NSFileManager defaultManager] isExecutableFileAtPath:p] ? p : nil;
 }
 
 - (BOOL)backupFile
