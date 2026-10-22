@@ -46,6 +46,11 @@ for f in term/*.c core/*.c app/*.m; do
     grep -q "$o" Makefile.openstep || { echo "LINT: $f is not listed in Makefile.openstep (it would fail to link)"; status=1; }
 done
 
+# --- every header must be in the hand-written HEADERS list (or edits to it would not rebuild what includes it) ---
+for h in term/*.h core/*.h app/*.h; do
+    grep -q "$h" Makefile.openstep || { echo "LINT: $h is not listed in HEADERS in Makefile.openstep"; status=1; }
+done
+
 # --- the application icon: Workspace reads it from a __ICON segment linked into the executable ---
 if [ ! -f app/StepHack.iconheader ] || [ ! -f app/StepHack.tiff ]; then
     echo "LINT: app/StepHack.iconheader and app/StepHack.tiff are both required (Workspace icon)"; status=1
