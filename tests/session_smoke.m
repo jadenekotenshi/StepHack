@@ -163,6 +163,16 @@ int main(void)
     [s applyColours];
     CHECK([[[tv defaultBackground] colorUsingColorSpaceName:NSCalibratedRGBColorSpace] redComponent] > 0.9);
 
+    /* bold text: a bold face of the same width is found where there is one, and the style follows Preferences */
+    printf("  (bold face found: %s)\n", [tv hasBoldFont] ? "yes" : "no");
+    [GameConfig setBoldStyle:2];
+    [s applyColours];
+    CHECK([GameConfig boldStyle] == 2);
+    [GameConfig setBoldStyle:7];
+    CHECK([GameConfig boldStyle] == 0);                                       /* nonsense falls back to the default */
+    [GameConfig setBoldStyle:0];
+    [s applyColours];
+
     /* keys: the delegate maps cursor keys, and leaves the rest */
     n = [s terminalView:tv translateKey:VT_KEY_UP mods:0 into:b];             CHECK(n == 1 && b[0] == '8');
     n = [s terminalView:tv translateKey:VT_KEY_PGDN mods:VT_MOD_SHIFT into:b]; CHECK(n == 2 && b[0] == 'G' && b[1] == '3');
@@ -230,6 +240,7 @@ int main(void)
         [GameConfig setCloseWhenDone:YES];
     }
     [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"ColourScheme"];
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"BoldStyle"];
 
     [fm removeFileAtPath:dir handler:nil];
     [GameConfig setPath:@"" forKey:@"launcher" game:g];

@@ -7,7 +7,7 @@
     NSPopUpButton *gamePop;
     NSTextField   *launcherField, *hackdirField, *rcField, *termField;
     NSButton      *padSwitch, *lineSwitch, *cursesSwitch, *closeSwitch;
-    NSPopUpButton *colourPop;
+    NSPopUpButton *colourPop, *boldPop;
     int            shown;                 /* index in the game table of the game the fields show */
 }
 + (PrefsController *)sharedController;
@@ -19,4 +19,5 @@
 - (void)cursesChanged:(id)sender;
 - (void)closeChanged:(id)sender;
 - (void)colourChanged:(id)sender;
+- (void)boldChanged:(id)sender;
 @end

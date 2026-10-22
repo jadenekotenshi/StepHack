@@ -35,6 +35,9 @@
  * are written for: much of what they show is yellow). */
 + (int)colourScheme;
 + (void)setColourScheme:(int)scheme;
+/* How bold text is drawn: 0 the font's bold face if it has one (else overstrike), 1 overstrike, 2 only brighter colour. */
++ (int)boldStyle;
++ (void)setBoldStyle:(int)style;
 + (BOOL)defaultToLineGraphics;                                                        /* add DECgraphics to a file that sets no symbol set */
 + (void)setDefaultToLineGraphics:(BOOL)flag;
 

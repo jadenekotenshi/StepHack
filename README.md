@@ -31,6 +31,9 @@ been built or run on OPENSTEP. Expect rough edges and please report what you fin
   white on black (what the games are written for: much of what they show is yellow). Open windows follow at once.
   Whichever you pick, colours are nudged to stay legible on it (`core/colours.c`): yellow, cyan and white are darkened on a
   light background, blue and black lightened on a dark one, keeping their hue.
+- **Bold text.** *Preferences > Bold text* chooses how bold is drawn: the font's own bold face when it has one of the same
+  width (the default), overstrike (the glyph drawn twice a point apart, which suits a bitmap font but smears an outline
+  one, and curses games print inventory letters in bold), or only a brighter colour.
 - **Command bar.** A row of buttons under the game (Pray, Name, Call, Loot, Chat, Enhance, Overview, Attrib) and a *More*
   menu (Force, Untrap, Turn Undead, Offer, Sit, Ride, Wipe, Rub, Dip, Invoke, Jump, Monster, Adjust, Conduct, Discoveries,
   Look Here, Redraw) type the command for you. They send extended commands, which every version takes whatever the

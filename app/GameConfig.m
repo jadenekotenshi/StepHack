@@ -144,6 +144,19 @@
     [d synchronize];
 }
 
++ (int)boldStyle
+{
+    int v = [[NSUserDefaults standardUserDefaults] integerForKey:@"BoldStyle"];
+    return (v == 1 || v == 2) ? v : 0;
+}
+
++ (void)setBoldStyle:(int)style
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    [d setInteger:((style == 1 || style == 2) ? style : 0) forKey:@"BoldStyle"];
+    [d synchronize];
+}
+
 + (BOOL)defaultToLineGraphics
 {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];

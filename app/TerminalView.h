@@ -2,6 +2,13 @@
 #include "vt.h"
 
 /* Informal protocol implemented by whoever owns the terminal (PTYSession). */
+/* How bold text is drawn. */
+enum {
+    TV_BOLD_AUTO = 0,        /* the font's bold face if it has one of the same width, else overstrike */
+    TV_BOLD_OVERSTRIKE = 1,  /* draw the glyph twice, a point apart (fine on bitmap fonts, smears an outline font) */
+    TV_BOLD_COLOUR = 2       /* no change of letterform: bold only brightens the colour */
+};
+
 @interface NSObject (TerminalViewDelegate)
 - (void)terminalView:(id)tv sendBytes:(const unsigned char *)bytes length:(int)n;
 - (void)terminalView:(id)tv resizedToCols:(int)cols rows:(int)rows;
@@ -16,6 +23,8 @@
     id         delegate;
     NSScroller *scroller;
     NSFont    *font;
+    NSFont    *boldFont;                       // a real bold face of the same width, or nil
+    int        boldStyle;                      // TV_BOLD_* : how bold text is drawn
     float      cellW, cellH, baseline;
     int        cols, rows;
     int        scrollBack;                 /* lines back from the live screen; 0 = live */
@@ -69,6 +78,8 @@
 - (float)lastFlushArea;                    /* points^2 of the last flush's redraw requests, for the tests */
 - (NSColor *)defaultBackground;                                    /* (for the tests) */
 - (void)setForeground:(NSColor *)fg background:(NSColor *)bg;       /* the default text and background colours */
+- (void)setBoldStyle:(int)style;                                   /* TV_BOLD_* */
+- (BOOL)hasBoldFont;                                               /* (for the tests) */
 - (void)setLocalScrollKeys:(BOOL)flag;
 - (void)setConfirmsMultilinePaste:(BOOL)flag;
 - (void)setPasteAnswer:(int)answer;        /* tests: -1 ask for real, 0 refuse, 1 accept */

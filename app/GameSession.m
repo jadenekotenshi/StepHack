@@ -215,6 +215,7 @@ int hk_reap_child(int pid, int *status_out)
 
 - (void)applyColours
 {
+    [termView setBoldStyle:[GameConfig boldStyle]];
     if ([GameConfig colourScheme] == 1)
         [termView setForeground:[NSColor whiteColor] background:[NSColor blackColor]];
     else
