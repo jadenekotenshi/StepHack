@@ -17,6 +17,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
 - (void)buildFullMenu;
 - (int)menuParts;
 - (void)startGameIndex:(int)index mode:(int)mode;
+- (NSMenu *)keepMenu:(NSMenu *)menu;
 - (void)rebuildGamesMenu;
 - (NSString *)installedSignature;
 - (void)addModeMenus;
@@ -31,6 +32,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     self = [super init];
     if (!self) return nil;
     sessions = [[NSMutableArray alloc] init];
+    menuKeepers = [[NSMutableArray alloc] init];
     return self;
 }
 
@@ -51,11 +53,26 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     return item;
 }
 
+/* This AppKit does not keep the menus it is given: not the main menu (NSApp setMainMenu:), nor a submenu of another (setSubmenu:
+ * forItem:), nor the Windows and Services menus.  It keeps pointers to them and uses them whenever the application is
+ * activated, so a menu that is only autoreleased is freed when the pool it was made in is drained, and the activation then
+ * sends messages to freed objects (the system log says "message respondsToSelector: sent to freed object") and the
+ * application dies.  Built before the event loop that pool lasted the whole run, by accident; every menu is therefore held
+ * here for the life of the program. */
+- (NSMenu *)keepMenu:(NSMenu *)menu
+{
+    [menuKeepers addObject:menu];
+    return menu;
+}
+
+- (int)menuCount { return (int)[menuKeepers count]; }
+
 - (NSMenu *)submenuNamed:(NSString *)title inMenu:(NSMenu *)parent
 {
     NSMenu *sub = [[NSMenu alloc] initWithTitle:title];
     id item = [parent addItemWithTitle:title action:NULL keyEquivalent:@""];
     [parent setSubmenu:sub forItem:item];
+    [self keepMenu:sub];
     return [sub autorelease];
 }
 
@@ -69,7 +86,11 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
     int i, found = 0;
     unsigned k;
 
-    for (k = [old count]; k > 0; k--) [menu removeItem:[old objectAtIndex:k - 1]];
+    for (k = [old count]; k > 0; k--) {
+        id gone = [old objectAtIndex:k - 1];
+        [menuKeepers addObject:gone];               /* held on: AppKit may still hold the item (the log said "hash sent to freed object") */
+        [menu removeItem:gone];
+    }
     for (i = 0; i < hk_game_count(); i++) {
         id item;
         if (![GameConfig isInstalled:hk_game(i)]) continue;
@@ -134,7 +155,7 @@ enum { TAG_PAD_LETTERS = 100, TAG_PAD_DIGITS, TAG_PAD_PHONE, TAG_PAD_QWERTZ, TAG
         menusBuilt = YES;
         return;
     }
-    main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
+    main = [self keepMenu:[[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease]];
     item = [main addItemWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"];
     [item setTarget:NSApp];
     SSTrace("buildMenu: minimal menu");
@@ -155,7 +176,7 @@ enum { MP_GAME = 1, MP_EDIT = 2, MP_PREFS = 4, MP_WINDOWS = 8, MP_HIDE = 16, MP_
 
 - (void)buildFullMenu
 {
-    NSMenu *main = [[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease];
+    NSMenu *main = [self keepMenu:[[[NSMenu alloc] initWithTitle:@"StepHack"] autorelease]];
     NSMenu *m;
     int parts = [self menuParts];
 
@@ -257,11 +278,11 @@ enum { MP_GAME = 1, MP_EDIT = 2, MP_PREFS = 4, MP_WINDOWS = 8, MP_HIDE = 16, MP_
 
     if (wizardMenu || menuLevel < 3 || !gameMenu) return;
     SSTrace("adding the wizard mode menu");
-    wizardMenu = [[[NSMenu alloc] initWithTitle:@"New Wizard Mode Game"] autorelease];
+    wizardMenu = [self keepMenu:[[[NSMenu alloc] initWithTitle:@"New Wizard Mode Game"] autorelease]];
     item = [gameMenu insertItemWithTitle:@"New Wizard Mode Game" action:NULL keyEquivalent:@"" atIndex:1];
     [gameMenu setSubmenu:wizardMenu forItem:item];
     SSTrace("adding the explore mode menu");
-    exploreMenu = [[[NSMenu alloc] initWithTitle:@"New Explore Mode Game"] autorelease];
+    exploreMenu = [self keepMenu:[[[NSMenu alloc] initWithTitle:@"New Explore Mode Game"] autorelease]];
     item = [gameMenu insertItemWithTitle:@"New Explore Mode Game" action:NULL keyEquivalent:@"" atIndex:2];
     [gameMenu setSubmenu:exploreMenu forItem:item];
 }

@@ -5,6 +5,7 @@
 @interface AppController : NSObject
 {
     NSMutableArray *sessions;          /* GameSession* */
+    NSMutableArray *menuKeepers;       /* every menu made, held for the life of the program (see -keepMenu:) */
     int             lastGame;          /* index into the game table of the last one started */
     NSMenu         *keypadMenu;
     NSMenu         *gameMenu;          /* the Game menu itself */
@@ -15,6 +16,7 @@
     BOOL            launched;          /* the application is running: until then no menu item looks at the disk or the preferences */
     NSMenu         *gamesMenu;         /* the New Game submenu: only the games that are installed */
 }
+- (int)menuCount;                      /* how many menus are being kept (for the tests) */
 - (void)buildMenu;                      /* before the application runs: only a minimal menu (Quit), quickly */
 - (void)buildFullMenu;                  /* the real menus, once the application is running */
 - (void)newGame:(id)sender;

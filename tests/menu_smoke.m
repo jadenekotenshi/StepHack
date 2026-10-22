@@ -63,8 +63,21 @@ int main(void)
 
     app = [[[AppController alloc] init] autorelease];
     [app buildMenu];
+    CHECK([app menuCount] == 1);                                            /* the minimal main menu is held */
     CHECK([[[NSApp mainMenu] itemArray] count] == 1);                      /* before the application runs: just Quit */
-    [app buildFullMenu];
+    {   /* menus made inside a pool that is then drained must survive it: the AppController holds them */
+        NSAutoreleasePool *inner = [[NSAutoreleasePool alloc] init];
+        [app buildFullMenu];
+        [inner release];
+    }
+    CHECK([app menuCount] >= 6);                                             /* main, Game, New Game, Keypad, Edit, Windows, Services ... */
+    {
+        NSMenu *gm = submenu([NSApp mainMenu], @"Game");
+        NSArray *its = [gm itemArray];
+        unsigned q;
+        CHECK(gm != nil && [its count] > 3);
+        for (q = 0; q < [its count]; q++) (void)[[its objectAtIndex:q] title];     /* still alive and readable */
+    }
     games = submenu(submenu([NSApp mainMenu], @"Game"), @"New Game");
     CHECK(games != nil);
     CHECK([[games itemArray] count] == 0);                                  /* nothing is looked up while the menus are built */
