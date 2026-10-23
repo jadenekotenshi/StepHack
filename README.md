@@ -45,7 +45,7 @@ unmodified in its tty mode, inside a terminal window StepHack provides, and Step
   several users: who may use wizard mode (`WIZARDS`), explore mode (`EXPLORERS`) and the shell escape (`SHELLERS`), how many
   games may run at once, seduction and the dump file. The file belongs to root and should be group-writable by wheel
   (`chgrp wheel` and `chmod 664` as root); the window changes it in place when you can write it, and otherwise shows it
-  read-only and says why. Only the games that read a `sysconf` (NetHack 3.6.7, 5.0, EvilHack, SpliceHack) offer it.
+  read-only and says why. Only the games that read a `sysconf` (NetHack 3.6.7, 5.0, EvilHack, SpliceHack, Hack'EM) offer it.
   Every save first copies the file, gzipped, to `~/.StepHack/backups/<game>/sysconf.old.ddMMMyyyy.hhmm.gz`
   (`.../nethack/sysconf.old.22Oct2026.1435.gz`; a copy of the same minute is kept as it is), in your home directory because the
   game's own directory is usually not yours to write to. *Clean Up...* deletes backups more than N days old (30 unless you
@@ -76,13 +76,14 @@ unmodified in its tty mode, inside a terminal window StepHack provides, and Step
 | NetHack 5.0 | `/usr/local/bin/nethack5` | `/usr/local/lib/nethack5dir` | `~/.nethackrc` |
 | EvilHack 0.9.3 | `/usr/local/bin/evilhack` | `/usr/local/lib/evilhackdir` | `~/.evilhackrc` |
 | SpliceHack 1.2.0 | `/usr/local/bin/splicehack` | `/usr/local/lib/splicehackdir` | `~/.splicehackrc` |
+| Hack'EM 1.3.2 | `/usr/local/bin/hackem` | `/usr/local/lib/hackemdir` | `~/.hackemrc` |
 | NetHack 3.4.3 | `/usr/local/bin/nethack343` | `/usr/local/lib/nethack343dir` | `~/.nethack343rc` (see below) |
 | UnNetHack 6.0.17 | `/usr/local/bin/unnethack` | `/usr/local/share/unnethack` | `~/.unnethackrc` (`~/.nethackrc` while that is absent; a new one starts from the game's `unnethackrc.default`) |
 | SporkHack 0.6.5 | `/usr/local/bin/sporkhack` | `/usr/local/lib/sporkhackdir` | `~/.sporkrc` (`~/.nethackrc` while that is absent) |
 
 These are where the [openstep-pkg](https://github.com/jadenekotenshi/openstep-pkg) packages install them. All three
 locations can be changed in *Preferences*. More variants
-SporkHack, UnNetHack, EvilHack, SpliceHack and the 3.4.3 package are built on ncurses, so they are run under the
+SporkHack, UnNetHack, EvilHack, SpliceHack, Hack'EM and the 3.4.3 package are built on ncurses, so they are run under the
 stock `xterm` terminal description instead of StepHack's own termcap entry; *Preferences* has a *Terminal* field to change
 that for any game (`stephack` selects StepHack's own entry).
 

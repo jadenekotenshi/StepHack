@@ -9,7 +9,8 @@ static const HkGameDef GAMES[] = {
     { "nethack343","NetHack 3.4.3",   "/usr/local/bin/nethack343","/usr/local/lib/nethack343dir",".nethack343rc",NULL,       NULL,                  "nethack343", "DECgraphics", 1, HK_FAMILY_34, HK_CURSES_GFX, 1, "xterm", NULL, "NETHACKOPTIONS" },
     { "unnethack", "UnNetHack 6.0.17","/usr/local/bin/unnethack", "/usr/local/share/unnethack",  ".unnethackrc", ".nethackrc", "unnethackrc.default", "unnethack",  "DECgraphics", 1, HK_FAMILY_34 | HK_FAMILY_36, HK_CURSES_GFX, 1, "xterm", NULL, NULL },
     { "evilhack",  "EvilHack 0.9.3",  "/usr/local/bin/evilhack",  "/usr/local/lib/evilhackdir",  ".evilhackrc",  NULL,         NULL,                  "evilhack",   "DECgraphics", 1, HK_FAMILY_36, HK_CURSES_SYMSET, 1, "xterm", "sysconf", NULL },
-    { "splicehack","SpliceHack 1.2.0","/usr/local/bin/splicehack","/usr/local/lib/splicehackdir",".splicehackrc",NULL,         NULL,                  "splicehack", "DECgraphics", 1, HK_FAMILY_36 | HK_FAMILY_50, HK_CURSES_SYMSET, 1, "xterm", "sysconf", NULL }
+    { "splicehack","SpliceHack 1.2.0","/usr/local/bin/splicehack","/usr/local/lib/splicehackdir",".splicehackrc",NULL,         NULL,                  "splicehack", "DECgraphics", 1, HK_FAMILY_36 | HK_FAMILY_50, HK_CURSES_SYMSET, 1, "xterm", "sysconf", NULL },
+    { "hackem",    "Hack'EM 1.3.2",  "/usr/local/bin/hackem",    "/usr/local/lib/hackemdir",    ".hackemrc",    NULL,         NULL,                  "hackem",     "DECgraphics", 1, HK_FAMILY_36, HK_CURSES_SYMSET, 0, "xterm", "sysconf", NULL }
 };
 
 const char *hk_mode_arg(int mode)

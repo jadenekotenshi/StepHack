@@ -210,7 +210,7 @@ static void test_rc_robust(void)
 
 static void test_schema(void)
 {
-    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack", "unnethack", "evilhack", "splicehack", "nethack343" };
+    const char *ids[] = { "nethack367", "slashem", "nethack5", "sporkhack", "unnethack", "evilhack", "splicehack", "nethack343", "hackem" };
     int g, i, j;
 
     for (g = 0; g < 8; g++) {
@@ -241,7 +241,7 @@ static void test_schema(void)
             }
         }
         CHECK(groups >= 4 && opts >= 40);
-        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0 || strcmp(ids[g], "unnethack") == 0 || strcmp(ids[g], "evilhack") == 0 || strcmp(ids[g], "splicehack") == 0 || strcmp(ids[g], "nethack343") == 0));
+        CHECK(hks_explicit(s) == (strcmp(ids[g], "nethack5") == 0 || strcmp(ids[g], "sporkhack") == 0 || strcmp(ids[g], "unnethack") == 0 || strcmp(ids[g], "evilhack") == 0 || strcmp(ids[g], "splicehack") == 0 || strcmp(ids[g], "nethack343") == 0 || strcmp(ids[g], "hackem") == 0));
         hks_free(s);
     }
     CHECK(hks_builtin("nosuch") == NULL);
@@ -589,7 +589,7 @@ static void test_games(void)
         CHECK(strcmp(sp->rcname, ".sporkrc") == 0 && strcmp(sp->rcname_alt, ".nethackrc") == 0 && strcmp(sp->term, "xterm") == 0);
         CHECK(hk_game_by_id("nethack")->term == NULL && hk_game_by_id("nethack")->rcname_alt == NULL);
         CHECK(hk_game_by_id("nethack")->sysconf && strcmp(hk_game_by_id("nethack")->sysconf, "sysconf") == 0);
-        CHECK(hk_game_by_id("nethack5")->sysconf && hk_game_by_id("evilhack")->sysconf && hk_game_by_id("splicehack")->sysconf);
+        CHECK(hk_game_by_id("nethack5")->sysconf && hk_game_by_id("evilhack")->sysconf && hk_game_by_id("splicehack")->sysconf && hk_game_by_id("hackem")->sysconf);
         CHECK(!hk_game_by_id("slashem")->sysconf && !hk_game_by_id("sporkhack")->sysconf && !hk_game_by_id("unnethack")->sysconf);
         CHECK(hk_game_by_id("slashem")->curses == HK_CURSES_NONE && hk_game_by_id("slashem")->curses_default == 0);
         CHECK(hk_game_by_id("nethack")->curses == HK_CURSES_SYMSET && hk_game_by_id("nethack5")->curses == HK_CURSES_SYMSET);
