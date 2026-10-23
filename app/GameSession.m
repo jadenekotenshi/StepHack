@@ -247,6 +247,7 @@ int hk_reap_child(int pid, int *status_out)
     NSRect scr = [[NSScreen mainScreen] frame];
 
     termView = [[TerminalView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100)];
+    [termView setSettleDelay:0.04 max:0.15];                   /* show a game's multi-step refresh as one frame */
     if (usesCurses) {
         /* 130 columns, or as many fewer (but never under 80) as the screen has room for */
         int wantCols = CURSES_COLS;

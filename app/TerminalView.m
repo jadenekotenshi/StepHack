@@ -232,7 +232,7 @@ static int same_width(float a, float b)
 - (void)flushTimerFired:(NSTimer *)timer
 {
     flushTimer = nil;                              /* a non-repeating NSTimer invalidates itself on firing */
-    [self flushDisplay];
+    [self flushDisplayIfDue];
 }
 
 - (void)flushDisplay
@@ -248,18 +248,24 @@ static int same_width(float a, float b)
 
 - (void)flushDisplayIfDue
 {
-    if (!pendingFlush) return;
-    if (minFlushInterval > 0.0 && [NSDate timeIntervalSinceReferenceDate] - lastFlush < minFlushInterval) {
-        if (flushTimer == nil) {
-            NSTimeInterval wait = minFlushInterval - ([NSDate timeIntervalSinceReferenceDate] - lastFlush);
+    NSTimeInterval now, wait = 0.0;
 
+    if (!pendingFlush) return;
+    now = [NSDate timeIntervalSinceReferenceDate];
+    if (minFlushInterval > 0.0 && now - lastFlush < minFlushInterval) wait = minFlushInterval - (now - lastFlush);
+    if (settleDelay > 0.0 && now - lastData < settleDelay && now - firstPending < settleMax) {
+        NSTimeInterval w = settleDelay - (now - lastData);      /* wait for the output to go quiet (a game's multi-step refresh) */
+        if (w > wait) wait = w;
+    }
+    if (wait > 0.0) {
+        if (flushTimer == nil)
             flushTimer = [NSTimer scheduledTimerWithTimeInterval:(wait > 0.001 ? wait : 0.001) target:self
                                                         selector:@selector(flushTimerFired:) userInfo:nil repeats:NO];
-        }
         return;
     }
     [self flushDisplay];
 }
+- (void)setSettleDelay:(float)seconds max:(float)maxSeconds { settleDelay = seconds; settleMax = maxSeconds; }
 
 - (void)setMaxFPS:(float)fps { minFlushInterval = (fps > 0.0) ? 1.0 / fps : 0.0; }
 - (float)maxFPS { return minFlushInterval > 0.0 ? (float)(1.0 / minFlushInterval) : 0.0; }
@@ -308,6 +314,8 @@ static int same_width(float a, float b)
         [delegate terminalView:self sendBytes:reply length:got];
     if (term->bell) { term->bell = 0; NSBeep(); }
     [self syncScroller];
+    lastData = [NSDate timeIntervalSinceReferenceDate];
+    if (!pendingFlush) firstPending = lastData;
     pendingFlush = YES;
     [self flushDisplayIfDue];
 }
