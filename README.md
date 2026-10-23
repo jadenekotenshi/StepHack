@@ -62,7 +62,7 @@ unmodified in its tty mode, inside a terminal window StepHack provides, and Step
 - **Curses interface by default.** Where a game has it (every game here but Slash'EM), StepHack adds
   `OPTIONS=windowtype:curses` to an options file that doesn't name an interface, with line graphics (`symset:DECgraphics`,
   or `cursesgraphics` for SporkHack and UnNetHack) and, if unset, `color`, `guicolor`, `mouse_support`, `perm_invent`,
-  `splash_screen` and `popup_dialog`. The window opens at 110 x 32 instead of 80 x 24 and the game runs under the `xterm`
+  `splash_screen` and `popup_dialog`. The window opens at 130 x 32 instead of 80 x 24 and the game runs under the `xterm`
   terminal description. A file that says `windowtype:tty` gets the plain interface; Preferences can turn curses off per game.
   The games must have been built with the curses interface.
 - **Line drawing.** Walls drawn with `DECgraphics` are painted as real lines, whatever font you use.

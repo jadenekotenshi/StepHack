@@ -1,4 +1,4 @@
-/* Host-only: draws a whole 110x32 screen of everything the games produce (bold, dim, underline, reverse, every colour,
+/* Host-only: draws a whole 130x32 screen of everything the games produce (bold, dim, underline, reverse, every colour,
  * line drawing, shades, a selection, the cursor) in both key states and both colour schemes, to see that drawing neither
  * crashes nor overruns anything (build it with the address checker: make draw-smoke).  */
 #import "TerminalView.h"

@@ -93,7 +93,17 @@ draw-smoke:
 	$(CC) -fsanitize=address,undefined build/ds_*.o -framework Foundation -framework AppKit -o build/draw_smoke
 	build/draw_smoke
 
+# Times a whole-screen redraw (host only, optimised, no address checker).
+draw-bench:
+	mkdir -p build
+	for f in tests/draw_bench.m app/TerminalView.m app/GameConfig.m app/UIHelpers.m; do \
+	  $(CC) -c -x objective-c -fno-objc-arc -w -O2 -Iterm -Icore -Iapp $$f -o build/db_$$(basename $$f .m).o || exit 1; \
+	done
+	for f in term/*.c core/*.c; do $(CC) -c -w -O2 -Iterm -Icore $$f -o build/db_c_$$(basename $$f .c).o || exit 1; done
+	$(CC) build/db_*.o -framework Foundation -framework AppKit -o build/draw_bench
+	build/draw_bench
+
 clean:
 	rm -rf build
 
-.PHONY: all test lint check-objc runner-smoke ending-smoke session-smoke menu-smoke draw-smoke clean
+.PHONY: all test lint check-objc runner-smoke ending-smoke session-smoke menu-smoke draw-smoke draw-bench clean

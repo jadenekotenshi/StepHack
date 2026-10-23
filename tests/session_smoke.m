@@ -150,7 +150,7 @@ int main(void)
     CHECK([rctext rangeOfString:@"number_pad:1"].length > 0);
     CHECK([rctext rangeOfString:@"windowtype:curses"].length > 0 && [rctext rangeOfString:@"symset:DECgraphics"].length > 0);
     CHECK([rctext rangeOfString:@"OPTIONS=guicolor"].length > 0 && [rctext rangeOfString:@"OPTIONS=mouse_support"].length > 0);
-    CHECK([s usesCurses] && [tv cols] == 110 && [tv rows] == 32);                 /* the curses interface gets the bigger window */
+    CHECK([s usesCurses] && [tv cols] == 130 && [tv rows] == 32);                 /* the curses interface gets the bigger window */
     CHECK([s padMode] == HK_PAD_DIGITS);
 
     /* colours: black on white until Preferences says otherwise, then the open window follows */
@@ -201,7 +201,7 @@ int main(void)
 
     {
         NSString *raw = [NSString stringWithContentsOfFile:plog];
-        CHECK(raw != nil && [raw hasPrefix:@"# nethack TERM=xterm curses=1 cols=110 rows=32\n"] && [raw rangeOfString:@"#pray"].length > 0);
+        CHECK(raw != nil && [raw hasPrefix:@"# nethack TERM=xterm curses=1 cols=130 rows=32\n"] && [raw rangeOfString:@"#pray"].length > 0);
         if (!hadFlag) [fm removeFileAtPath:flag handler:nil];
         [fm removeFileAtPath:plog handler:nil];
     }

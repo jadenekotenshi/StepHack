@@ -56,7 +56,7 @@
 #endif
 
 #define COMMAND_BAR_H 30.0
-#define CURSES_COLS 110                  /* the curses interface uses the whole window, so it gets a bigger one */
+#define CURSES_COLS 130                  /* the curses interface uses the whole window, so it gets a bigger one */
 #define CURSES_ROWS 32
 #define TICK_SECONDS 0.02
 #define MAX_READS_PER_TICK 8             /* x 16 KB, within TICK_BUDGET seconds */
@@ -247,7 +247,17 @@ int hk_reap_child(int pid, int *status_out)
     NSRect scr = [[NSScreen mainScreen] frame];
 
     termView = [[TerminalView alloc] initWithFrame:NSMakeRect(0, 0, 100, 100)];
-    cs = usesCurses ? [termView contentSizeForCols:CURSES_COLS rows:CURSES_ROWS] : [termView contentSizeForCols:80 rows:24];
+    if (usesCurses) {
+        /* 130 columns, or as many fewer (but never under 80) as the screen has room for */
+        int wantCols = CURSES_COLS;
+        cs = [termView contentSizeForCols:wantCols rows:CURSES_ROWS];
+        while (wantCols > 80 && cs.width + sw > scr.size.width - 24.0) {
+            wantCols--;
+            cs = [termView contentSizeForCols:wantCols rows:CURSES_ROWS];
+        }
+    } else {
+        cs = [termView contentSizeForCols:80 rows:24];
+    }
     content = NSMakeRect(0, 0, cs.width + sw, cs.height + COMMAND_BAR_H);
 
     window = [[NSWindow alloc] initWithContentRect:content
