@@ -37,6 +37,7 @@ enum {
     NSTimeInterval lastFlush;
     NSTimeInterval minFlushInterval;           /* 0: every write redraws */
     NSTimeInterval lastData, firstPending, settleDelay, settleMax;
+    void       *drawLog;                       /* a FILE *, or NULL: the diagnostic of redraw times */
     BOOL       pendingFlush;                   /* the terminal changed since the last flush */
     NSTimer   *flushTimer;                     /* a deferred flush is due when it fires (not retained: it is the run loop's) */
     int        flushCount;                     /* flushes so far, and what the last one asked AppKit to redraw: for the tests */
@@ -71,6 +72,7 @@ enum {
 - (int)rows;
 - (NSSize)contentSizeForCols:(int)c rows:(int)r;
 - (void)writeBytes:(const unsigned char *)bytes length:(int)n;
+- (void)setDrawLog:(void *)f;
 - (void)setSettleDelay:(float)seconds max:(float)maxSeconds;   /* hold a redraw until output pauses (0 = off) */
 - (void)flushDisplayIfDue;                 /* call every tick: redraws what changed once the frame interval has passed */
 - (void)flushDisplay;                      /* ... or right now */

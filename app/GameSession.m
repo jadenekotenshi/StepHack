@@ -544,6 +544,13 @@ int hk_reap_child(int pid, int *status_out)
             fflush((FILE *)rawLog);
         }
     }
+    /* Another: while ~/.StepHack.draw exists, what each redraw cost is written to ~/.StepHack.drawlog (shared by all games). */
+    if ([fm fileExistsAtPath:[NSHomeDirectory() stringByAppendingPathComponent:@".StepHack.draw"]]) {
+        static FILE *drawLogFile = NULL;
+        if (!drawLogFile)
+            drawLogFile = fopen(UI_CPATH([NSHomeDirectory() stringByAppendingPathComponent:@".StepHack.drawlog"]), "wb");
+        [termView setDrawLog:drawLogFile];
+    }
     flags = fcntl(masterFD, F_GETFL, 0);
     fcntl(masterFD, F_SETFL, flags | O_NONBLOCK);
     state = GS_RUNNING;

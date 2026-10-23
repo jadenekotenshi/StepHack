@@ -265,6 +265,7 @@ static int same_width(float a, float b)
     }
     [self flushDisplay];
 }
+- (void)setDrawLog:(void *)f { drawLog = f; }
 - (void)setSettleDelay:(float)seconds max:(float)maxSeconds { settleDelay = seconds; settleMax = maxSeconds; }
 
 - (void)setMaxFPS:(float)fps { minFlushInterval = (fps > 0.0) ? 1.0 / fps : 0.0; }
@@ -401,6 +402,9 @@ static unsigned cell_key(const vt_cell *c, int invert, int reverse_screen,
 typedef struct { int c, n, fgc, bgc; unsigned key; } DrawRun;
 static DrawRun *run_buf = NULL;
 static int run_cap = 0;
+static char *row_buf = NULL;
+static int row_cap = 0;
+static int statShows = 0, statRuns = 0;
 
 - (void)drawRow:(int)r cursor:(BOOL)withCursor fromCol:(int)c0 toCol:(int)c1
 {
@@ -445,6 +449,7 @@ static int run_cap = 0;
         run_buf[nruns].key = key;
         nruns++;
     }
+    statRuns += nruns;
 
     /* 2. Backgrounds, all of them before any text (a neighbour's background drawn after a glyph would cut off what reaches
      * past its cell).  drawRect: has already filled the area with the default background, so only the other colours need
@@ -459,59 +464,91 @@ static int run_cap = 0;
         NSRectFill(NSMakeRect(MARGIN + run_buf[k].c * cellW, y, n * cellW + (run_buf[j - 1].c + run_buf[j - 1].n == cols ? MARGIN : 0.0), cellH));
     }
 
-    /* 3. The text, the painted shapes and the underlines. */
-    for (k = 0; k < nruns; k++) {
-        c = run_buf[k].c; n = run_buf[k].n; key = run_buf[k].key; fgc = run_buf[k].fgc; bgc = run_buf[k].bgc;
-        x = MARGIN + c * cellW;
-        anyText = NO;
-        anyShape = NO;
-        for (i = 0; i < n && i < (int)sizeof(buf) - 1; i++) {
-            const vt_cell *cl = (cells && c + i < w) ? &cells[c + i] : &blank;
-            int b;
-            if (cl->ch < 0x80 && cl->ch >= 0x20) { b = cl->ch; }                   /* plain ASCII: no lookup */
-            else {
-                b = nsenc_encode(cl->ch);
-                if (vt_box_arms(cl->ch) || vt_block_kind(cl->ch)) { b = ' '; anyShape = YES; }      /* painted below */
-                if (b < 0) b = nsenc_encode(vt_fallback_char(cl->ch));
-                if (b < 0) b = '?';
-                if (b == 0) b = ' ';
-            }
-            buf[i] = (char)b;
-            if (b != ' ') anyText = YES;
+    /* 3. The characters of the whole range at once (one lookup per cell, not per run). */
+    if (c1 - c0 > row_cap) {
+        char *nb = (char *)realloc(row_buf, (size_t)(c1 - c0 + 16));
+        if (!nb) return;
+        row_buf = nb;
+        row_cap = c1 - c0 + 16;
+    }
+    anyShape = NO;
+    for (c = c0; c < c1; c++) {
+        const vt_cell *cl = (cells && c < w) ? &cells[c] : &blank;
+        int b;
+        if (cl->ch < 0x80 && cl->ch >= 0x20) { b = cl->ch; }                   /* plain ASCII: no lookup */
+        else {
+            b = nsenc_encode(cl->ch);
+            if (vt_box_arms(cl->ch) || vt_block_kind(cl->ch)) { b = ' '; anyShape = YES; }      /* painted below */
+            if (b < 0) b = nsenc_encode(vt_fallback_char(cl->ch));
+            if (b < 0) b = '?';
+            if (b == 0) b = ' ';
         }
-        buf[i] = '\0';
-        while (i > 0 && buf[i - 1] == ' ') buf[--i] = '\0';      /* don't paint trailing blanks */
+        row_buf[c - c0] = (char)b;
+    }
 
+    /* 4. The text: neighbouring runs that differ only in their background are shown with one call (the characters are
+     * on a fixed grid, so a blank stands in for the cells that need no ink).  Then the shapes and the underlines. */
+    for (k = 0; k < nruns; k = j) {
+        unsigned look = run_buf[k].key & ~(0x1ffu << 9);         /* everything but the background */
+        BOOL dim = ((run_buf[k].key >> 18) & VT_DIM) != 0;
+        BOOL bold, realBold;
+        NSFont *want;
+
+        for (j = k + 1; j < nruns; j++) {
+            if ((run_buf[j].key & ~(0x1ffu << 9)) != look) break;
+            if (dim && run_buf[j].bgc != run_buf[k].bgc) break;      /* (a dim colour is blended with its own background) */
+        }
+        c = run_buf[k].c;
+        n = run_buf[j - 1].c + run_buf[j - 1].n - c;
+        x = MARGIN + c * cellW;
+        fgc = run_buf[k].fgc;
+        bgc = run_buf[k].bgc;
+        key = run_buf[k].key;
+        {   /* the slice, without trailing blanks */
+            int len = n;
+            if (len > (int)sizeof(buf) - 1) len = (int)sizeof(buf) - 1;
+            memcpy(buf, row_buf + (c - c0), (size_t)len);
+            while (len > 0 && buf[len - 1] == ' ') len--;
+            buf[len] = '\0';
+            anyText = len > 0;
+        }
         fg = [self colorForCode:fgc];
-        if ((key >> 18) & VT_DIM)
-            fg = [fg blendedColorWithFraction:0.5 ofColor:[self colorForCode:bgc]];
+        if (dim) fg = [fg blendedColorWithFraction:0.5 ofColor:[self colorForCode:bgc]];
+        bold = ((key >> 18) & VT_BOLD) != 0;
+        realBold = bold && boldFont && boldStyle == TV_BOLD_AUTO;
+        want = realBold ? boldFont : font;
         if (anyText) {
-            BOOL bold = ((key >> 18) & VT_BOLD) != 0;
-            BOOL realBold = bold && boldFont && boldStyle == TV_BOLD_AUTO;
-            NSFont *want = realBold ? boldFont : font;
             SSCrumb("TerminalView drawRow: text");
             if (want != lastFont) { [want set]; lastFont = want; }
             if (fg != lastColor) { [fg set]; lastColor = fg; }
             PSmoveto(x, y + baseline);
             PSshow(buf);
+            statShows++;
             if (bold && !realBold && boldStyle != TV_BOLD_COLOUR) {      /* overstrike: works with any font */
                 PSmoveto(x + 1.0, y + baseline);
                 PSshow(buf);
+                statShows++;
             }
-        }
-        if (anyShape) {
-            SSCrumb("TerminalView drawRow: line-drawing shapes");
-            for (i = 0; i < n; i++) {
-                const vt_cell *cl = (cells && c + i < w) ? &cells[c + i] : &blank;
-                if (vt_box_arms(cl->ch) || vt_block_kind(cl->ch))
-                    [self drawShape:cl->ch inRect:NSMakeRect(x + i * cellW, y, cellW, cellH)
-                              color:fg background:[self colorForCode:bgc]];
-            }
-            lastColor = nil;                                  /* (drawShape sets colours of its own) */
         }
         if ((key >> 18) & VT_UNDERLINE) {
             if (fg != lastColor) { [fg set]; lastColor = fg; }
             NSRectFill(NSMakeRect(x, y + baseline - 1.5, n * cellW, 1.0));
+        }
+    }
+    if (anyShape) {
+        SSCrumb("TerminalView drawRow: line-drawing shapes");
+        for (k = 0; k < nruns; k++) {
+            fgc = run_buf[k].fgc; bgc = run_buf[k].bgc;
+            fg = [self colorForCode:fgc];
+            if ((run_buf[k].key >> 18) & VT_DIM) fg = [fg blendedColorWithFraction:0.5 ofColor:[self colorForCode:bgc]];
+            for (i = 0; i < run_buf[k].n; i++) {
+                const vt_cell *cl;
+                c = run_buf[k].c + i;
+                cl = (cells && c < w) ? &cells[c] : &blank;
+                if (vt_box_arms(cl->ch) || vt_block_kind(cl->ch))
+                    [self drawShape:cl->ch inRect:NSMakeRect(MARGIN + c * cellW, y, cellW, cellH)
+                              color:fg background:[self colorForCode:bgc]];
+            }
         }
     }
 }
@@ -523,6 +560,10 @@ static int run_cap = 0;
     BOOL live = (scrollBack == 0 && term->cursor_visible);
     NSRect b = [self bounds];
 
+    NSTimeInterval t0 = drawLog ? [NSDate timeIntervalSinceReferenceDate] : 0.0;
+
+    statShows = 0;
+    statRuns = 0;
     SSCrumb("TerminalView drawRect");
     NSRectClip(rect);                                        /* (drawRow reaches a cell beyond each end: it must not paint there) */
     [defaultBg set];
@@ -542,6 +583,12 @@ static int run_cap = 0;
         NSRect cr = NSMakeRect(MARGIN + term->cx * cellW, [self rectForRow:term->cy].origin.y, cellW, cellH);
         [defaultFg set];
         NSFrameRect(cr);
+    }
+    if (drawLog) {                                           /* the diagnostic: what each redraw cost */
+        fprintf((FILE *)drawLog, "%.1f ms  rect %gx%g  rows %d-%d  runs %d  shows %d\n",
+                ([NSDate timeIntervalSinceReferenceDate] - t0) * 1000.0, NSWidth(rect), NSHeight(rect), first, last,
+                statRuns, statShows);
+        fflush((FILE *)drawLog);
     }
 }
 
