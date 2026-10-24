@@ -587,7 +587,7 @@ static int statShows = 0, statRuns = 0;
     if (drawLog) {                                           /* the diagnostic: what each redraw cost */
         fprintf((FILE *)drawLog, "%.1f ms  rect %gx%g  rows %d-%d  runs %d  shows %d  %.0f ms after the output arrived\n",
                 ([NSDate timeIntervalSinceReferenceDate] - t0) * 1000.0, NSWidth(rect), NSHeight(rect), first, last,
-                statRuns, statShows, (t0 - firstPending) * 1000.0);
+                statRuns, statShows, (firstPending > 0.0 && t0 > firstPending) ? (t0 - firstPending) * 1000.0 : 0.0);
         fflush((FILE *)drawLog);
     }
 }
