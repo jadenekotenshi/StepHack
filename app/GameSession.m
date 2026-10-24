@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include "oscompat.h"    /* pid_t: must come before <sys/wait.h> below, whose own POSIX-mode
                           * prototypes (wait()/waitpid()) reference pid_t themselves */
 /* OPENSTEP 4.2's <sys/wait.h> is dual-mode, gated by _POSIX_SOURCE (confirmed by reading the real
@@ -59,8 +60,9 @@
 #define CURSES_COLS 130                  /* the curses interface uses the whole window, so it gets a bigger one */
 #define CURSES_ROWS 32
 #define TICK_SECONDS 0.02
-#define MAX_READS_PER_TICK 8             /* x 16 KB, within TICK_BUDGET seconds */
+#define MAX_READS_PER_TICK 64            /* x 16 KB, within TICK_BUDGET seconds */
 #define TICK_BUDGET 0.03
+#define MORE_WAIT_USEC 4000              /* after a short read, how long to wait for the game's next piece of a refresh */
 
 /* gcc 2.7.2 does not look ahead within an @implementation, so anything called
  * before its definition must be declared here. */
@@ -589,7 +591,17 @@ int hk_reap_child(int pid, int *status_out)
                 [termView writeBytes:buf length:n];
                 reads++;
             }
-        } while (n == (int)sizeof(buf) && reads < MAX_READS_PER_TICK && [NSDate timeIntervalSinceReferenceDate] - t0 < TICK_BUDGET);
+            if (n > 0 && n < (int)sizeof(buf)) {       /* a short read: the game is probably still writing (the pty holds little,
+                                                         * so it is held up until we read) -- give it a moment, don't wait a tick */
+                fd_set rf;
+                struct timeval tv;
+                FD_ZERO(&rf);
+                FD_SET(masterFD, &rf);
+                tv.tv_sec = 0;
+                tv.tv_usec = MORE_WAIT_USEC;
+                if (select(masterFD + 1, &rf, NULL, NULL, &tv) <= 0) break;
+            }
+        } while (n > 0 && reads < MAX_READS_PER_TICK && [NSDate timeIntervalSinceReferenceDate] - t0 < TICK_BUDGET);
         if (reads > 0) [self refreshTitle];
     }
     if (n == 0 || (n < 0 && errno == EIO)) {                   /* EIO: the classic "far end hung up" for a pty */
